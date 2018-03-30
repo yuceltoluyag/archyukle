@@ -75,10 +75,8 @@ sistemkonfigure() {
   genfstab -U /mnt >> /mnt/etc/fstab
 
   echo -e "$red (2/2) >>>>> Ayar Dosyalarınız Getiriliyor. $reset"
-  echo curl "https://git.io/vxouN" -o /mnt/root/ayar.sh
-  echo chmod +x /mnt/root/ayar.sh
-  echo arch-chroot /mnt /root/ayar.sh
-  echo rm -rf /mnt/root/ayar.sh
+  arch-chroot /mnt /bin/bash
+  sh -c "$(curl -sL git.io/vxouN)"
 }
 
 uyari
