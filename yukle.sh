@@ -67,12 +67,13 @@ yukleyici() {
   echo -e "\nServer = http://ftp.linux.org.tr/archlinux/\$repo/os/\$arch" >> /etc/pacman.d/mirrorlist
 
   echo -e "$red (2/2) >>>>> Temel Sistem paketleri yükleniyor.       $reset"
-  pacstrap /mnt base base-devel
+  pacstrap -i /mnt base base-devel
+  pacstrap /mnt grub os-prober
 }
 
 sistemkonfigure() {
   echo -e "$red (1/2) >>>>> Fstab Dosyanız oluşturuluyor.          $reset"
-  genfstab -U /mnt >> /mnt/etc/fstab
+  genfstab -L -p /mnt >> /mnt/etc/fstab
 
   echo -e "$red (2/2) >>>>> Ayar Dosyalarınız Getiriliyor. $reset"
   arch-chroot /mnt /bin/bash

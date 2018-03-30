@@ -15,6 +15,7 @@ zaman() {
 dil() {
   echo -e "$red (1/2) >>>>> Dil Ayarları Yapılandırılıyor.   $reset"
   echo -e "localectl set-locale LANG=tr_TR.UTF-8 UTF-8"
+  sleep 5
   locale-gen
 
   echo -e "$red (2/2) >>>>> Sistem dili yapılandırılıyor.                           $reset"
@@ -46,23 +47,22 @@ makine() {
 
 internetayarlari() {
   echo -e "$red (1/2) >>>>> İnternet Ayarlarınız Yapılandırılıyor                 $reset"
-  pacman -S --noconfirm iw wpa_supplicant dialog
+  pacman -S --noconfirm iw wpa_supplicant dialog networkmanager
 
   echo -e "$red (2/2) >>>>> İnternet Ayarlarınız Başlangıç İçin Etkinleştiriliyor. $reset"
-  systemctl enable dhcpcd
+ systemctl enable NetworkManager.service
 }
 
 kullaniciayarlari() {
   echo -e "$red (1/6) >>>>> Root için bir parola belirleyiniz.                       $reset"
-  echo -e "$red (2/6) >>>>> Root parolasını tekrarlayınız:             $reset"
+  echo -e "$red (2/6) >>>>> Root parolasını Giriniz:             $reset"
   read pw
   echo -e "$pw\n$pw" | passwd
 
-  echo -e "$red (3/6) >>>>> Bir kullanıcı oluşturulsun.                               $reset"
+  echo -e "$red (3/6) >>>>> Kullanıcı oluşturuluyor.                               $reset"
   echo -e "$red (4/6) >>>>> Lütfen kullanıcı adını giriniz:                  $reset"
   read un
-  pacman -S --noconfirm zsh
-  useradd -m -g users -G wheel -s /bin/zsh $un
+  useradd -m -g users -G optical,storage,wheel,video,audio,users,power,network,log -s /bin/bash $un
 
   echo -e "$red (5/6) >>>>> Oluşturulan Kullanıcı için şifre belirleyiniz:        $reset"
   read upw
@@ -79,7 +79,11 @@ bootayarlari() {
   grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=grub
 
   echo -e "$red (2/2) >>>>> Grub Dosyası oluşturuluyor         $reset"
+  mkinitcpio -p linux
+  sleep 4
   grub-mkconfig -o /boot/grub/grub.cfg
+  sleep 3
+  pacman -S xorg xorg-server xorg-xinit mesa alsa-lib alsa-utils gamin dbus
 }
 
 zaman
