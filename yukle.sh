@@ -6,7 +6,7 @@ reset='\033[0m'
 
 uyari() {
   echo -e "                                                                                         "
-  echo -e "$red (1/3) >>>>> Please read the following notes carefully:                        $reset"
+  echo -e "$red (1/3) >>>>> Lütfen Aşağıdaki notları dikkatle okuyunuz:                        $reset"
   echo -e "                                                                                         "
   echo -e "$green ########################################################################### $reset"
   echo -e "$green * İnternet Bağlantınızın Aktifliğini kontrol edin.   $reset"
