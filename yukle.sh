@@ -57,6 +57,8 @@ diskayarlari() {
   mount /dev/"$diskname"1 /mnt/boot
   mkdir -p /mnt/home
   mount /dev/"$diskname"4 /mnt/home
+  lsblk
+  sleep 5
 }
 
 yukleyici() {
