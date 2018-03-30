@@ -14,7 +14,7 @@ zaman() {
 
 dil() {
   echo -e "$red (1/2) >>>>> Dil Ayarları Yapılandırılıyor.   $reset"
-  echo -e "tr_TR.UTF-8 UTF-8\tr_TR.UTF-8 UTF-8" > /etc/locale.gen
+  echo -e "tr_TR.UTF-8\tr_TR.UTF-8" > /etc/locale.gen
   locale-gen
 
   echo -e "$red (2/2) >>>>> Sistem dili yapılandırılıyor.                           $reset"

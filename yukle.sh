@@ -3,7 +3,8 @@
 green='\033[32m'
 red='\033[31m'
 reset='\033[0m'
-
+echo loadkeys trq
+echo setfont iso09.16
 uyari() {
   echo -e "                                                                                         "
   echo -e "$red (1/3) >>>>> Lütfen Aşağıdaki notları dikkatle okuyunuz:                        $reset"
@@ -55,9 +56,8 @@ diskayarlari() {
   mkdir -p /mnt/boot
   mount /dev/"$diskname"1 /mnt/boot
   mkdir -p /mnt/home
-  mount /dev/"$diskname"4 /mnt/boot
+  mount /dev/"$diskname"4 /mnt/home
 }
-/$repo/os/$arch
 
 yukleyici() {
   echo -e "$red (1/2) >>>>> Yansılar Ayarlanıyor.              $reset"
@@ -73,10 +73,10 @@ sistemkonfigure() {
   genfstab -U /mnt >> /mnt/etc/fstab
 
   echo -e "$red (2/2) >>>>> Ayar Dosyalarınız Getiriliyor. $reset"
-  curl "https://raw.githubusercontent.com/yuceltoluyag/ayar.sh" -o /mnt/root/ayar.sh
-  chmod +x /mnt/root/ayar.sh
-  arch-chroot /mnt /root/ayar.sh
-  rm -rf /mnt/root/ayar.sh
+  echo curl "https://git.io/vxouN" -o /mnt/root/ayar.sh
+  echo chmod +x /mnt/root/ayar.sh
+  echo arch-chroot /mnt /root/ayar.sh
+  echo rm -rf /mnt/root/ayar.sh
 }
 
 uyari
