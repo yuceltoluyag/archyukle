@@ -41,7 +41,7 @@ diskayarlari() {
   parted -s --align optimal /dev/$diskname mklabel gpt
   parted -s --align optimal /dev/$diskname mkpart primary 0% 256M
   parted -s --align optimal /dev/$diskname mkpart primary 256M 4G
-  parted -s --align optimal /dev/$diskname mkpart primary 256M 20G
+  parted -s --align optimal /dev/$diskname mkpart primary 4G  20G
   parted -s --align optimal /dev/$diskname mkpart primary 20G 100%
 
   echo -e "$red (4/5) >>>>> Diskler Formatlanıyor.           $reset"
