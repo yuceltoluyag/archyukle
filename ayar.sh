@@ -83,7 +83,7 @@ bootayarlari() {
   sleep 4
   grub-mkconfig -o /boot/grub/grub.cfg
   sleep 3
-  pacman -S --noconfirm xorg xorg-server xorg-xinit mesa alsa-lib alsa-utils gamin dbus
+  exit
 }
 
 zaman
