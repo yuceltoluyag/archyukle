@@ -99,25 +99,21 @@ sistemkonfigure() {
   echo -e "$red (1/2) >>>>> Fstab Dosyanız oluşturuluyor.          $reset"
   genfstab -L -p /mnt >> /mnt/etc/fstab
 
-  echo -e "$red (2/2) >>>>> Chroot Girişi Yapılıyor. $reset"
-  arch-chroot /mnt /bin/bash
-  sleep 3
-  
-}
-
-ayaryapilandir () {
- echo -e "$green (2/3) >>>>> 'ayar Dosyaları getiriliyor'       $reset"
+  echo -e "$green (2/3) >>>>> 'ayar Dosyaları getiriliyor'       $reset"
 curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/ayar.sh" -o /mnt/root/config.sh
   chmod +x /mnt/root/config.sh
   arch-chroot /mnt /root/config.sh
   rm -rf /mnt/root/config.sh
+  
 }
+
+
 
 uyari
 diskayarlari
 yukleyici
 sistemkonfigure
-ayaryapilandir
+
 
 echo -e "$green (0/0) >>>>> 'Kurulumdan Çıkılıyor.            $reset"
 
