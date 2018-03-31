@@ -75,10 +75,10 @@ sistemkonfigure() {
   echo -e "$red (1/2) >>>>> Fstab Dosyanız oluşturuluyor.          $reset"
   genfstab -L -p /mnt >> /mnt/etc/fstab
 
-  echo -e "$red (2/2) >>>>> Ayar Dosyalarınız Getiriliyor. $reset"
+  echo -e "$red (2/2) >>>>> Chroot Girişi Yapılıyor. $reset"
   arch-chroot /mnt /bin/bash
   sleep 3
-  sh -c "$(curl -sL git.io/vxouN)"
+  
 }
 
 uyari
@@ -88,4 +88,6 @@ sistemkonfigure
 
 
 echo -e "$green (0/0) >>>>> 'Yükleme Tamamlandı.            $reset"
-exit
+echo -e "$green (1/1) >>>>> 'ayar Dosyaları getiriliyor'       $reset"
+sleep 1
+sh -c "$(curl -sL git.io/vxouN)"
