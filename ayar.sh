@@ -76,14 +76,14 @@ kullaniciayarlari() {
 bootayarlari() {
   echo -e "$red (1/2) >>>>> Boot Dosyası yapılandırılıyor.                          $reset"
   pacman -S --noconfirm grub efibootmgr intel-ucode
-  grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=grub
+  grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=arch_grub
 
   echo -e "$red (2/2) >>>>> Grub Dosyası oluşturuluyor         $reset"
   mkinitcpio -p linux
   sleep 4
   grub-mkconfig -o /boot/grub/grub.cfg
   sleep 3
-  pacman -S xorg xorg-server xorg-xinit mesa alsa-lib alsa-utils gamin dbus
+  pacman -S --noconfirm xorg xorg-server xorg-xinit mesa alsa-lib alsa-utils gamin dbus
 }
 
 zaman

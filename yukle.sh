@@ -3,8 +3,8 @@
 green='\033[32m'
 red='\033[31m'
 reset='\033[0m'
-echo loadkeys trq
-echo setfont iso09.16
+loadkeys trq
+setfont iso09.16
 uyari() {
   echo -e "                                                                                         "
   echo -e "$red (1/3) >>>>> Lütfen Aşağıdaki notları dikkatle okuyunuz:                        $reset"
@@ -77,6 +77,7 @@ sistemkonfigure() {
 
   echo -e "$red (2/2) >>>>> Ayar Dosyalarınız Getiriliyor. $reset"
   arch-chroot /mnt /bin/bash
+  sleep 3
   sh -c "$(curl -sL git.io/vxouN)"
 }
 
