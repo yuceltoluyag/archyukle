@@ -3,8 +3,32 @@
 green='\033[32m'
 red='\033[31m'
 reset='\033[0m'
-loadkeys trq
-setfont iso09.16
+CONSOLE_KEYMAP="trq"
+CONSOLE_FONT="iso09.16"
+
+#announce
+function kontrol {
+  >&2 echo -n "$1"
+}
+
+#check_fail
+function hata_kontrol {
+  if [[ $1 -ne 0 ]]; then
+    >&2 echo "HATA!"
+    exit 1
+  else
+    >&2 echo "TAMAM!"
+  fi
+}
+
+hata_kontrol "İnternet Bağlantınız Kontrol Ediliyor... "
+wget -q --tries=10 --timeout=20 --spider https://www.google.com.tr/
+kontrol $?
+
+kontrol "vconsole Dosyası yapılandırılıyor... "
+echo -en "KEYMAP=$CONSOLE_KEYMAP\nFONT=$CONSOLE_FONT\n" > /mnt/etc/vconsole.conf
+hata_kontrol $?
+
 uyari() {
   echo -e "                                                                                         "
   echo -e "$red (1/3) >>>>> Lütfen Aşağıdaki notları dikkatle okuyunuz:                        $reset"
@@ -83,7 +107,10 @@ sistemkonfigure() {
 
 ayaryapilandir () {
  echo -e "$green (2/3) >>>>> 'ayar Dosyaları getiriliyor'       $reset"
-sh -c "$(curl -sL git.io/vxouN)"
+curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/ayar.sh" -o /mnt/root/config.sh
+  chmod +x /mnt/root/config.sh
+  arch-chroot /mnt /root/config.sh
+  rm -rf /mnt/root/config.sh
 }
 
 uyari
@@ -91,3 +118,7 @@ diskayarlari
 yukleyici
 sistemkonfigure
 ayaryapilandir
+
+echo -e "$green (0/0) >>>>> 'Kurulumdan Çıkılıyor.            $reset"
+
+exit

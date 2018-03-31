@@ -3,6 +3,22 @@
 red='\033[31m'
 reset='\033[0m'
 
+#announce
+function kontrol {
+  >&2 echo -n "$1"
+}
+
+#check_fail
+function hata_kontrol {
+  if [[ $1 -ne 0 ]]; then
+    >&2 echo "HATA!"
+    exit 1
+  else
+    >&2 echo "TAMAM!"
+  fi
+}
+
+
 
 zaman() {
   echo -e "$red (1/1) >>>>> Sistem Saati Ayarlanıyor.                           $reset"
@@ -18,8 +34,9 @@ dil() {
   sleep 5
   locale-gen
 
-  echo -e "$red (2/2) >>>>> Sistem dili yapılandırılıyor.                           $reset"
-  echo "LANG=tr_TR.UTF-8
+kontrol "$red >>>>>   Sistem dili yapılandırılıyor.... "
+cat <<EOF > /mnt/etc/locale.conf
+LANG=tr_TR.UTF-8
 LC_CTYPE="tr_TR.UTF-8"
 LC_NUMERIC="tr_TR.UTF-8"
 LC_TIME="tr_TR.UTF-8"
@@ -32,8 +49,13 @@ LC_ADDRESS="tr_TR.UTF-8"
 LC_TELEPHONE="tr_TR.UTF-8"
 LC_MEASUREMENT="tr_TR.UTF-8"
 LC_IDENTIFICATION="tr_TR.UTF-8"
-LC_ALL=" > /etc/locale.conf
+LC_ALL=" 
+EOF
+hata_kontrol $?
+          
 }
+
+
 
 makine() {
   echo -e "$red (1/3) >>>>> Makine Adı Ayarları.                               $reset"
@@ -92,6 +114,7 @@ makine
 internetayarlari
 kullaniciayarlari
 bootayarlari
-
+exit
+exit
 sleep 2
 systemctl reboot
