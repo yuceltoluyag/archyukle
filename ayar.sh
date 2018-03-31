@@ -83,7 +83,7 @@ bootayarlari() {
   sleep 4
   grub-mkconfig -o /boot/grub/grub.cfg
   sleep 3
-  exit
+
 }
 
 zaman
@@ -93,4 +93,5 @@ internetayarlari
 kullaniciayarlari
 bootayarlari
 
-exit
+sleep 2
+systemctl reboot

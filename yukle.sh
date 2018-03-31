@@ -81,13 +81,13 @@ sistemkonfigure() {
   
 }
 
+ayaryapilandir () {
+ echo -e "$green (2/3) >>>>> 'ayar Dosyaları getiriliyor'       $reset"
+sh -c "$(curl -sL git.io/vxouN)"
+}
+
 uyari
 diskayarlari
 yukleyici
 sistemkonfigure
-
-
-echo -e "$green (0/0) >>>>> 'Yükleme Tamamlandı.            $reset"
-echo -e "$green (1/1) >>>>> 'ayar Dosyaları getiriliyor'       $reset"
-sleep 1
-sh -c "$(curl -sL git.io/vxouN)"
+ayaryapilandir
