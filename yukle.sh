@@ -25,9 +25,7 @@ hata_kontrol "İnternet Bağlantınız Kontrol Ediliyor... "
 wget -q --tries=10 --timeout=20 --spider https://www.google.com.tr/
 kontrol $?
 
-kontrol "vconsole Dosyası yapılandırılıyor... "
-echo -en "KEYMAP=$CONSOLE_KEYMAP\nFONT=$CONSOLE_FONT\n" > /mnt/etc/vconsole.conf
-hata_kontrol $?
+
 
 uyari() {
   echo -e "                                                                                         "
