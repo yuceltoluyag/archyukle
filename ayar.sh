@@ -17,6 +17,8 @@ function hata_kontrol {
     >&2 echo "TAMAM!"
   fi
 }
+CONSOLE_KEYMAP="trq"
+CONSOLE_FONT="iso09.16"
 
 kontrol "vconsole Dosyası yapılandırılıyor... "
 echo -en "KEYMAP=$CONSOLE_KEYMAP\nFONT=$CONSOLE_FONT\n" > /mnt/etc/vconsole.conf
