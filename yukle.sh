@@ -21,8 +21,8 @@ function hata_kontrol {
   fi
 }
 
-hata_kontrol "İnternet Bağlantınız Kontrol Ediliyor... "
-wget -q --tries=10 --timeout=20 --spider https://www.google.com.tr/
+hata_kontrol "İnternet Bağlantınız Kontrol Ediliyor..."
+wget -q --tries=10 --timeout=20 --spider https://www.google.com
 kontrol $?
 
 
