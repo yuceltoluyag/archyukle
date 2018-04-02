@@ -17,13 +17,7 @@ function hata_kontrol {
     >&2 echo "TAMAM!"
   fi
 }
-CONSOLE_KEYMAP="trq"
-CONSOLE_FONT="iso09.16"
 
-kontrol "vconsole Dosyası yapılandırılıyor... "
-sudo mkdir /mnt/etc/vconsole.conf
-echo -en "KEYMAP=$CONSOLE_KEYMAP\nFONT=$CONSOLE_FONT\n" > /mnt/etc/vconsole.conf
-hata_kontrol $?
 
 zaman() {
   echo -e "$red (1/1) >>>>> Sistem Saati Ayarlanıyor.                           $reset"
