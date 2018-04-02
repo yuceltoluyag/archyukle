@@ -21,12 +21,6 @@ function hata_kontrol {
   fi
 }
 
-hata_kontrol "İnternet Bağlantınız Kontrol Ediliyor..."
-wget -q --tries=10 --timeout=20 --spider https://www.google.com
-kontrol $?
-
-
-
 uyari() {
   echo -e "                                                                                         "
   echo -e "$red (1/3) >>>>> Lütfen Aşağıdaki notları dikkatle okuyunuz:                        $reset"
@@ -99,10 +93,11 @@ sistemkonfigure() {
 }
 ayargetir() {
  echo -e "$green (2/3) >>>>> 'ayar Dosyaları getiriliyor'       $reset"
-curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/ayar.sh" -o /mnt/root/config.sh
-  chmod +x /mnt/root/config.sh
-  arch-chroot /mnt /root/config.sh
-  rm -rf /mnt/root/config.sh
+ mkdir -p /mnt/ayar/
+curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/ayar.sh" -o /mnt/ayar/config.sh
+  chmod +x /mnt/ayar/config.sh
+  arch-chroot /mnt /ayar/config.sh
+  rm -rf /mnt/ayar/config.sh
 }
 
 uyari
