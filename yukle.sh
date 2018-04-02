@@ -99,7 +99,9 @@ curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/ayar.sh" -
   arch-chroot /mnt /ayar/config.sh
   rm -rf /mnt/ayar/config.sh
 }
-
+pwd
+whoami
+ls -l
 uyari
 diskayarlari
 yukleyici
