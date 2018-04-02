@@ -105,15 +105,8 @@ curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/ayar.sh" -
   rm -rf /mnt/root/config.sh
 }
 
-
-
 uyari
 diskayarlari
 yukleyici
 sistemkonfigure
 ayargetir
-
-
-echo -e "$green (0/0) >>>>> 'Kurulumdan Çıkılıyor.            $reset"
-
-exit
