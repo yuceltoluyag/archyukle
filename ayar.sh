@@ -104,7 +104,9 @@ bootayarlari() {
   sleep 4
   grub-mkconfig -o /boot/grub/grub.cfg
   sleep 3
-
+ exit
+ umount -R /mnt
+ sudo systemctl reboot
 }
 
 zaman
@@ -113,7 +115,4 @@ makine
 internetayarlari
 kullaniciayarlari
 bootayarlari
-exit
-exit
-sleep 2
-systemctl reboot
+
