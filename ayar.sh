@@ -48,7 +48,7 @@ LC_ADDRESS="tr_TR.UTF-8"
 LC_TELEPHONE="tr_TR.UTF-8"
 LC_MEASUREMENT="tr_TR.UTF-8"
 LC_IDENTIFICATION="tr_TR.UTF-8"
-LC_ALL=" 
+LC_ALL=""
 EOF
 hata_kontrol $?
           
@@ -97,6 +97,7 @@ kullaniciayarlari() {
 bootayarlari() {
   echo -e "$red (1/2) >>>>> Boot Dosyası yapılandırılıyor.                          $reset"
   pacman -S --noconfirm grub efibootmgr intel-ucode
+  sleep 3
   grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=arch_grub
 
   echo -e "$red (2/2) >>>>> Grub Dosyası oluşturuluyor         $reset"
