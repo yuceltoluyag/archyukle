@@ -187,8 +187,7 @@ bootayarlari() {
  
 
 
-if [ "$1" == "chroot" ]
-then
+if [ "$(stat -c %d:%i /)" != "$(stat -c %d:%i /proc/1/root/.)" ]; then
 zaman
 dil
 makine
