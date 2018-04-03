@@ -91,19 +91,19 @@ sistemkonfigure() {
   echo -e "$red (1/2) >>>>> Fstab Dosyanız oluşturuluyor.          $reset"
   genfstab -L -p /mnt >> /mnt/etc/fstab
 }
-ayargetir() {
+
  echo -e "$green (2/3) >>>>> 'ayar Dosyaları getiriliyor'       $reset"
+
+
+if [ "$(stat -c %d:%i /)" != "$(stat -c %d:%i /proc/1/root/.)" ]; then
  mkdir -p /mnt/ayar/
 curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/ayar.sh" -o /mnt/ayar/config.sh
   chmod +x /mnt/ayar/config.sh
   arch-chroot /mnt /ayar/config.sh
   rm -rf /mnt/ayar/config.sh
-}
-pwd
-whoami
-ls -l
+else
 uyari
 diskayarlari
 yukleyici
 sistemkonfigure
-ayargetir
+fi
