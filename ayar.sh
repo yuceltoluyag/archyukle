@@ -34,7 +34,7 @@ dil() {
   locale-gen
 
 kontrol "$red >>>>>   Sistem dili yapılandırılıyor.... "
-cat <<EOF > /mnt/etc/locale.conf
+cat <<EOF > /etc/locale.conf
 LANG=tr_TR.UTF-8
 LC_CTYPE="tr_TR.UTF-8"
 LC_NUMERIC="tr_TR.UTF-8"
