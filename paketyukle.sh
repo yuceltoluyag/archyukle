@@ -1,7 +1,46 @@
 echo "exec i3" >> ~/.xinitrc
-echo "[archlinuxfr]
-SigLevel = Never
-Server = http://repo.archlinux.fr/$arch" >> /etc/pacman.conf
+
+echo "================================================"
+echo "Yetkili olduğunuzdan emin olun"
+echo "yaourt kurulumu tamamlandı."
+echo "================================================"
+echo ""
+echo -n "paket yüklensin mi? [E/h] "
+read evet
+
+
+function yaourt {
+  base=$(pacman -Qs base-devel)
+  if [[ $base == "" ]]; then
+    echo "base-devel paketiniz yüklenmemiş görünüyor."
+    echo '"pacman -S base-devel" komutunu kullanarak sistem paketinizi yükledikten sonra scripti çalıştırın'
+    exit 1
+  else
+    echo "Paket indiriliyor ..."
+    curl -O https://aur.archlinux.org/packages/pa/package-query/package-query.tar.gz
+    echo "package-query çıkartılıyor ..."
+    tar zxvf package-query.tar.gz
+    cd package-query
+    echo "package-query yükleniyor ..."
+    makepkg -si --noconfirm
+    cd ..
+    echo "yaourt paketleri getirliyor ..."
+    curl -O https://aur.archlinux.org/packages/ya/yaourt/yaourt.tar.gz
+    echo "yaourt paketleri çıkartılıyor ..."
+    tar zxvf yaourt.tar.gz
+    cd yaourt
+    echo "yaourt yükleniyor ..."
+    makepkg -si --noconfirm
+    echo "Tamam!"
+  fi  
+}
+
+if [[ $evet == "E" || $evet == "e" || $evet == "" ]]; then
+  yaourt
+else
+  echo "Çıkış yapılıyor ..."
+  exit 1
+fi
 
 #ne vereyim abime
 
