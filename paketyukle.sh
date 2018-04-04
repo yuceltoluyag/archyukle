@@ -19,7 +19,7 @@ calis() {
     code=$?
     if (( code > 0 ))
     then
-        hata "Aşağıdaki komut hatalı çalıştırıldı $code:"
+        hata "hata işlem yapılamadı hata sebebi getiriliyor $code:"
         hata "$@"
         exit $code
     fi
@@ -97,15 +97,6 @@ aur_paket=(
     powerline-fonts-git
 	
 )
-
-bilgi "Ana Paketleri Yükleniyor"
-calis pacman --noconfirm --sync --needed "${ana_paketler[@]}"
-bilgi "Aur Paketleri Yükleniyor"
-calis yaourt --noconfirm --sync --needed "${aur_paket[@]}"
-bilgi "Masaüstünüz Ayalarlanıyor"
-calis sudo -u "$USER" trizen --noconfirm --sync --needed "${masa_ust[@]}"
-calis systemctl enable lxdm
-
 # Git ayarları
 read -p "Github ayarlarınızı yapalım mı (e/h): " gitsec
 if [ "$gitsec" == "e" ] || [ "$gitsec" == "e" ]
@@ -119,3 +110,11 @@ then
   git config --global user.name $githubadi
   git config --global user.email $githubmail
 fi
+
+bilgi "Ana Paketleri Yükleniyor"
+calis sudo pacman --noconfirm --sync --needed "${ana_paketler[@]}"
+bilgi "Aur Paketleri Yükleniyor"
+calis yaourt --noconfirm --sync --needed "${aur_paket[@]}"
+bilgi "Masaüstünüz Ayalarlanıyor"
+calis sudo -u "$USER" trizen --noconfirm --sync --needed "${masa_ust[@]}"
+calis systemctl enable lxdm
