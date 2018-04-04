@@ -55,10 +55,10 @@ diskayarlari() {
   
   echo -e "$red (3/5) >>>>> Diskleri bölme işlemi başlıyor.             $reset"
   parted -s --align optimal /dev/$diskname mklabel gpt
-  parted -s --align optimal /dev/$diskname mkpart primary 0% 512M
-  parted -s --align optimal /dev/$diskname mkpart primary 512M 4G
-  parted -s --align optimal /dev/$diskname mkpart primary 4G  20G
-  parted -s --align optimal /dev/$diskname mkpart primary 20G 100%
+  parted -s --align optimal /dev/$diskname mkpart primary 0% 1G
+  parted -s --align optimal /dev/$diskname mkpart primary 1G 8G
+  parted -s --align optimal /dev/$diskname mkpart primary 8G  100G
+  parted -s --align optimal /dev/$diskname mkpart primary 100G 100%
 
   echo -e "$red (4/5) >>>>> Diskler Formatlanıyor.           $reset"
   mkfs.fat -F32 /dev/"$diskname"1
