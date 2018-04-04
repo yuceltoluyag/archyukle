@@ -13,6 +13,7 @@ read evet
 
 
 if which yaourt >/dev/null; then
+    bilgi "Yaourt Zaten Yüklü"
     echo exists
 else
     base=$(pacman -Qs base-devel)
@@ -59,7 +60,7 @@ calis() {
         exit $code
     fi
 }
-
+calis gpg --recv-key B6C8F98282B944E3B0D5C2530FC3042E345AD05D
 # Başlangıçta hangi paketleri kurmak istiyoruz?
 ana_paketler=(
 fontconfig
@@ -119,7 +120,6 @@ aur_paket=(
     urxvt-resize-font-git
     dropbox
 	steam
-	discord
 	telegram-desktop
 	whatsapp-desktop
 	skypeforlinux-stable-bin
