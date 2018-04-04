@@ -14,7 +14,7 @@ read evet
 
 if which yaourt >/dev/null; then
     bilgi "Yaourt Zaten Yüklü"
-    echo exists
+    exit $?
 else
     base=$(pacman -Qs base-devel)
     sudo pacman -Syy
@@ -150,5 +150,5 @@ calis sudo pacman --noconfirm --sync --needed "${ana_paketler[@]}"
 bilgi "Aur Paketleri Yükleniyor"
 calis yaourt --noconfirm --sync --needed "${aur_paket[@]}"
 bilgi "Masaüstünüz Ayalarlanıyor"
-calis sudo -u "$USER" "${masa_ust[@]}"
-calis systemctl enable lxdm
+calis yaourt --noconfirm  "${masa_ust[@]}"
+calis sudo systemctl enable lxdm
