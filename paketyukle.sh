@@ -1,4 +1,4 @@
-echo "exec i3" >> ~/.xinitrc
+echo "exec i3" > ~/.xinitrc
 
 echo "================================================"
 echo "Yetkili bir abi olduğunuzdan emin olun"
@@ -9,14 +9,11 @@ echo -n "paketler yüklenecek hazır mısınız? [E/h] " #winzort sorusu gibi ol
 read evet
 
 
-function yaourt {
-  base=$(pacman -Qs base-devel)
-  if [[ $base == "" ]]; then
-    echo "base-devel paketleriniz gözden geçiriliyor."
-    echo '"pacman -S base-devel" komutu getiriliyor'
-    exit 1
-  else
-sudo pacman -Syy
+if which yaourt >/dev/null; then
+    echo exists
+else
+    base=$(pacman -Qs base-devel)
+    sudo pacman -Syy
 sudo pacman -S git base-devel --noconfirm
 mkdir yaourt && cd yaourt
 git clone https://aur.archlinux.org/package-query.git
@@ -29,8 +26,7 @@ makepkg -sri
 cd ../..
 rm yaourt -rf
     echo "Tamam!"
-  fi  
-}
+fi
 
 if [[ $evet == "E" || $evet == "e" || $evet == "" ]]; then
   yaourt
@@ -151,5 +147,5 @@ calis sudo pacman --noconfirm --sync --needed "${ana_paketler[@]}"
 bilgi "Aur Paketleri Yükleniyor"
 calis yaourt --noconfirm --sync --needed "${aur_paket[@]}"
 bilgi "Masaüstünüz Ayalarlanıyor"
-calis sudo -u "$USER" --sync --needed "${masa_ust[@]}"
+calis sudo -u "$USER" "${masa_ust[@]}"
 calis systemctl enable lxdm
