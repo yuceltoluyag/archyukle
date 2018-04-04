@@ -122,7 +122,7 @@ aur_paket=(
 	discord
 	telegram-desktop
 	whatsapp-desktop
-	skype
+	skypeforlinux-stable-bin
 	google-chrome
     # Font
     otf-vollkorn
