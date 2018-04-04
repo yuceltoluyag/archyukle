@@ -151,5 +151,5 @@ calis sudo pacman --noconfirm --sync --needed "${ana_paketler[@]}"
 bilgi "Aur Paketleri Yükleniyor"
 calis yaourt --noconfirm --sync --needed "${aur_paket[@]}"
 bilgi "Masaüstünüz Ayalarlanıyor"
-calis sudo -u "$USER" trizen --noconfirm --sync --needed "${masa_ust[@]}"
+calis sudo -u "$USER" --noconfirm --sync --needed "${masa_ust[@]}"
 calis systemctl enable lxdm
