@@ -16,21 +16,18 @@ function yaourt {
     echo '"pacman -S base-devel" komutunu kullanarak sistem paketinizi yükledikten sonra scripti çalıştırın'
     exit 1
   else
-    echo "Paket indiriliyor ..."
-    curl -O https://aur.archlinux.org/packages/pa/package-query/package-query.tar.gz
-    echo "package-query çıkartılıyor ..."
-    tar zxvf package-query.tar.gz
-    cd package-query
-    echo "package-query yükleniyor ..."
-    makepkg -si --noconfirm
-    cd ..
-    echo "yaourt paketleri getirliyor ..."
-    curl -O https://aur.archlinux.org/packages/ya/yaourt/yaourt.tar.gz
-    echo "yaourt paketleri çıkartılıyor ..."
-    tar zxvf yaourt.tar.gz
-    cd yaourt
-    echo "yaourt yükleniyor ..."
-    makepkg -si --noconfirm
+sudo pacman -Syy
+sudo pacman -S git base-devel
+mkdir yaourt && cd yaourt
+git clone https://aur.archlinux.org/package-query.git
+git clone https://aur.archlinux.org/yaourt.git
+cd package-query
+makepkg -sri
+cd ..
+cd yaourt
+makepkg -sri
+cd ../..
+rm yaourt -rf
     echo "Tamam!"
   fi  
 }
