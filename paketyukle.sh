@@ -4,14 +4,107 @@ SigLevel = Never
 Server = http://repo.archlinux.fr/$arch" >> /etc/pacman.conf
 
 #ne vereyim abime
-packages+=( yaourt ) # madirfakir uykum geldi yatacam :D
-packages+=( cairo fontconfig freetype2 ttf-anonymous-pro ttf-dejavu ttf-liberation ttf-inconsolata ttf-ubuntu-font-family ttf-croscore ttf-droid ttf-roboto adobe-source-code-pro-fonts adobe-source-sans-pro-fonts adobe-source-serif-pro-fonts) # fontlar
-packages+=( xorg xorg-server xorg-xinit lxdm) # sistem dosyaları
-packages+=( a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore gstreamer0.10-plugins  ) # Kodekler
-packages+=( vlc gimp kdenlive git curl wget filezilla) # madirfakir uykum geldi yatacam :D
-packages+=( p7zip unrar file-roller wget gvfs networkmanager-openconnect networkmanager-openvpn networkmanager-pptp networkmanager-vpnc pulseaudio-alsa pavucontrol xfce4-pulseaudio-plugin  ) # madirfakir uykum geldi yatacam :D
-packages+=( i3 dmenu xorg xorg-xinit feh ) # masaüstü
-pacman --noconfirm --needed -S  ${packages[@]}
+
+bilgi() {
+    echo ">> $(tput setaf 2) $@$(tput sgr0)" >&2
+}
+
+hata() {
+    echo "$(tput bold; tput setaf 5)$@$(tput sgr0)" >&2
+}
+
+calis() {
+    echo "# $(tput setaf 6)$@$(tput sgr0)" >&2
+    "$@"
+    code=$?
+    if (( code > 0 ))
+    then
+        hata "Aşağıdaki komut hatalı çalıştırıldı $code:"
+        hata "$@"
+        exit $code
+    fi
+}
+
+# Başlangıçta hangi paketleri kurmak istiyoruz?
+ana_paketler=(
+yaourt
+fontconfig
+freetype2 
+ttf-anonymous-pro 
+ttf-dejavu 
+ttf-liberation 
+ttf-inconsolata 
+ttf-ubuntu-font-family 
+ttf-croscore 
+ttf-droid 
+ttf-roboto 
+adobe-source-code-pro-fonts 
+adobe-source-sans-pro-fonts 
+adobe-source-serif-pro-fonts
+xorg
+xorg-server 
+xorg-xinit 
+lxdm
+vlc 
+gimp 
+kdenlive 
+git 
+curl 
+wget 
+filezilla
+p7zip 
+unrar 
+file-roller 
+wget 
+networkmanager-openconnect 
+networkmanager-openvpn 
+networkmanager-pptp 
+networkmanager-vpnc 
+pulseaudio-alsa 
+pavucontrol 
+xfce4-pulseaudio-plugin
+redshift
+htop
+bash-completion
+)
+
+masa_ust=(
+    i3-wm        # Pencere yöneticisi
+    i3status     # Durum komutu
+    i3lock       # Kilit ekranı
+    rofi         # Uygulama başlatıcısı
+    rxvt-unicode # terminal
+    polkit       # PolicyKit
+    xorg-xrandr  # Grafik yapılandırmaları
+    dunst        # Bildirim
+)
+ 
+aur_paket=(
+    # program
+	libc++
+    urxvt-resize-font-git
+    dropbox
+	steam
+	discord
+	telegram-desktop
+	whatsapp-desktop
+	skype
+	google-chrome
+    # Font
+    otf-vollkorn
+    otf-fira-code
+    fontawesome.sty
+    powerline-fonts-git
+	
+)
+
+bilgi "Ana Paketleri Yükleniyor"
+calis pacman --noconfirm --sync --needed "${ana_paketler[@]}"
+bilgi "Aur Paketleri Yükleniyor"
+calis yaourt --noconfirm --sync --needed "${aur_paket[@]}"
+bilgi "Masaüstünüz Ayalarlanıyor"
+calis sudo -u "$USER" trizen --noconfirm --sync --needed "${masa_ust[@]}"
+calis systemctl enable lxdm
 
 # Git ayarları
 read -p "Github ayarlarınızı yapalım mı (e/h): " gitsec
