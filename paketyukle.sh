@@ -1,23 +1,23 @@
 echo "exec i3" >> ~/.xinitrc
 
 echo "================================================"
-echo "Yetkili olduğunuzdan emin olun"
-echo "yaourt kurulumu tamamlandı."
+echo "Yetkili bir abi olduğunuzdan emin olun"
+echo "yaourt ve diğer kurulumlar birazdan başlıyor."
 echo "================================================"
 echo ""
-echo -n "paket yüklensin mi? [E/h] "
+echo -n "paketler yüklenecek hazır mısınız? [E/h] " #winzort sorusu gibi oldu :D
 read evet
 
 
 function yaourt {
   base=$(pacman -Qs base-devel)
   if [[ $base == "" ]]; then
-    echo "base-devel paketiniz yüklenmemiş görünüyor."
-    echo '"pacman -S base-devel" komutunu kullanarak sistem paketinizi yükledikten sonra scripti çalıştırın'
+    echo "base-devel paketleriniz gözden geçiriliyor."
+    echo '"pacman -S base-devel" komutu getiriliyor'
     exit 1
   else
 sudo pacman -Syy
-sudo pacman -S git base-devel
+sudo pacman -S git base-devel --noconfirm
 mkdir yaourt && cd yaourt
 git clone https://aur.archlinux.org/package-query.git
 git clone https://aur.archlinux.org/yaourt.git
@@ -63,7 +63,6 @@ calis() {
 
 # Başlangıçta hangi paketleri kurmak istiyoruz?
 ana_paketler=(
-yaourt
 fontconfig
 freetype2 
 ttf-anonymous-pro 
