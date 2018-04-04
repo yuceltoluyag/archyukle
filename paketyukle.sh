@@ -1,4 +1,7 @@
 echo "exec i3" > ~/.xinitrc
+sudo sh -c "echo '[archlinuxfr]
+SigLevel = Never
+Server = http://repo.archlinux.fr/$arch' >> /etc/pacman.conf"
 
 echo "================================================"
 echo "Yetkili bir abi olduğunuzdan emin olun"
