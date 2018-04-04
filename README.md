@@ -10,3 +10,12 @@ Merhaba ! kolay arch linux kurulumu ile kurulum otomatik olarak tamamlanacaktır
  
  - sh -c "$(curl -sL  git.io/vxouh)" #yukle dosyası
  -  sh -c "$(curl -sL git.io/vx1cT)" #ayar dosyası
+
+# Kapatıp açtıktan sonra virtualboxun uefi diski yerleştirmeme sorunu çözümü
+
+ fs0: edit startup.nsh
+\EFI\arch_grub\grubx64.efi
+ctrl-s <basın>
+<enter>
+ctrl-q <basın>
+reset
