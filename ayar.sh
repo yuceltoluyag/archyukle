@@ -48,7 +48,7 @@ LC_ADDRESS="tr_TR.UTF-8"
 LC_TELEPHONE="tr_TR.UTF-8"
 LC_MEASUREMENT="tr_TR.UTF-8"
 LC_IDENTIFICATION="tr_TR.UTF-8"
-LC_ALL=""
+LC_ALL=
 EOF
 hata_kontrol $?
           
