@@ -1,44 +1,11 @@
-echo "exec i3" > ~/.xinitrc
-sudo sh -c "echo '[archlinuxfr]
-SigLevel = Never
-Server = http://repo.archlinux.fr/\$arch' >> /etc/pacman.conf"
-
+#!/usr/bin/env bash
 echo "================================================"
 echo "Yetkili bir abi olduğunuzdan emin olun"
-echo "yaourt ve diğer kurulumlar birazdan başlıyor."
+echo "Aurman ve diğer kurulumlar birazdan başlıyor."
 echo "================================================"
 echo ""
 echo -n "paketler yüklenecek hazır mısınız? [E/h] " #winzort sorusu gibi oldu :D
 read evet
-
-
-if which yaourt >/dev/null; then
-    bilgi "Yaourt Zaten Yüklü"
-    exit $?
-else
-    base=$(pacman -Qs base-devel)
-    sudo pacman -Syy
-sudo pacman -S git base-devel --noconfirm
-mkdir yaourt && cd yaourt
-git clone https://aur.archlinux.org/package-query.git
-git clone https://aur.archlinux.org/yaourt.git
-cd package-query
-makepkg -sri
-cd ..
-cd yaourt
-makepkg -sri
-cd ../..
-rm yaourt -rf
-    echo "Tamam!"
-fi
-
-if [[ $evet == "E" || $evet == "e" || $evet == "" ]]; then
-  yaourt
-else
-  echo "Çıkış yapılıyor ..."
-  exit 1
-fi
-
 #ne vereyim abime
 
 bilgi() {
@@ -60,7 +27,30 @@ calis() {
         exit $code
     fi
 }
-calis gpg --recv-key B6C8F98282B944E3B0D5C2530FC3042E345AD05D
+
+if which aurman >/dev/null; then
+    bilgi "Aurman  Zaten Yüklü"
+    
+else
+    base=$(pacman -Qs base-devel)
+    sudo pacman -Syy
+sudo pacman -S git base-devel --noconfirm
+git clone  https://aur.archlinux.org/aurman.git 
+cd aurman
+makepkg -sri
+cd ..
+rm aurman -rf
+    echo "Tamam!"
+fi
+
+if [[ $evet == "E" || $evet == "e" || $evet == "" ]]; then
+  aurman
+else
+  echo "Çıkış yapılıyor ..."
+  exit 1
+fi
+
+
 # Başlangıçta hangi paketleri kurmak istiyoruz?
 ana_paketler=(
 fontconfig
@@ -79,7 +69,8 @@ adobe-source-serif-pro-fonts
 xorg
 xorg-server 
 xorg-xinit 
-lxdm
+lightdm
+lightdm-gtk-greeter
 vlc 
 gimp 
 kdenlive 
@@ -98,37 +89,77 @@ networkmanager-vpnc
 pulseaudio-alsa 
 pavucontrol 
 xfce4-pulseaudio-plugin
+)
+
+ana_paketleri=(
 redshift
 htop
 bash-completion
+gcc
+patch
+zlib
+readline
+libxml2
+libxslt
+bison
+autoconf
+automake
+diffutils
+make
+libtool
+dbus
+sudo
+wget
+)
+
+ana_paketlerin=(
+openssh
+tar
+gzip
+unzip
+unrar
+git
+gvim
+gvfs
+ntfs-3g
+gvfs-afc
+alsa-oss
+alsa-lib
+alsa-utils
+thunar-volman
+zsh
+nvidia
+lib32-nvidia-utils
+lib32-nvidia-libgl
+lib32-mesa-demos
+libva-vdpau-driver
 )
 
 masa_ust=(
-    i3-wm        # Pencere yöneticisi
-    i3status     # Durum komutu
-    i3lock       # Kilit ekranı
-    rofi         # Uygulama başlatıcısı
-    rxvt-unicode # terminal
+    xfce4        # Pencere yöneticisi
+    xfce4-goodies     # Durum komutu
     polkit       # PolicyKit
     xorg-xrandr  # Grafik yapılandırmaları
-    dunst        # Bildirim
 )
  
 aur_paket=(
     # program
 	libc++
-    urxvt-resize-font-git
     dropbox
 	steam
+	steam-fonts 
 	telegram-desktop
-	whatsapp-desktop
+	whatsapp-web-desktop
 	skypeforlinux-stable-bin
 	google-chrome
+	xarchiver
+	ocs-url
     # Font
     otf-vollkorn
     otf-fira-code
     fontawesome.sty
     powerline-fonts-git
+    ttf-google-fonts-git
 	
 )
 # Git ayarları
@@ -147,8 +178,13 @@ fi
 
 bilgi "Ana Paketleri Yükleniyor"
 calis sudo pacman --noconfirm --sync --needed "${ana_paketler[@]}"
+bilgi "Ana Paketleri Yükleniyor"
+calis sudo pacman --noconfirm --sync --needed "${ana_paketleri[@]}"
+bilgi "Ana Paketleri Yükleniyor"
+calis sudo pacman --noconfirm --sync --needed "${ana_paketlerin[@]}"
 bilgi "Aur Paketleri Yükleniyor"
-calis yaourt --noconfirm --sync --needed "${aur_paket[@]}"
+calis aurman --noconfirm --sync --needed "${aur_paket[@]}"
 bilgi "Masaüstünüz Ayalarlanıyor"
-calis yaourt --noconfirm  "${masa_ust[@]}"
-calis sudo systemctl enable lxdm
+calis aurman --noconfirm --sync --needed  "${masa_ust[@]}"
+calis sudo systemctl enable lightdm.service
+calis sudo systemctl enable nvidia-persistenced.service
