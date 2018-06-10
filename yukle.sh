@@ -79,9 +79,8 @@ diskayarlari() {
 
 yukleyici() {
   echo -e "$red (1/2) >>>>> Yansılar Ayarlanıyor.              $reset"
-  echo -e "Server = http://ftp.linux.org.tr/archlinux/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist
-  echo -e "\nServer = http://ftp.linux.org.tr/archlinux/\$repo/os/\$arch" >> /etc/pacman.d/mirrorlist
-
+  sudo pacman -S reflector --noconfirm
+  sudo reflector --verbose --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
   echo -e "$red (2/2) >>>>> Temel Sistem paketleri yükleniyor.       $reset"
   pacstrap -i /mnt base base-devel
   pacstrap /mnt grub os-prober
