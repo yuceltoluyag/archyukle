@@ -1,6 +1,6 @@
 ﻿# Kolay Arch Linux Kurulumu # archyukle!
 
-Merhaba ! kolay arch linux kurulumu ile kurulum otomatik olarak tamamlanacaktır **Test**. Aşamasındandır geliştirmeye devam ediyorum. Şu an için başarılı şekilde kurulum yapabiliyor ancak yinede sanal makine harici denemeyiniz.
+Merhaba ! kolay arch linux kurulumu ile kurulum otomatik olarak tamamlanacaktır **Test**. Aşamasındandır geliştirmeye devam ediyorum.
   
 
 # Sanal makinede başlangıçta yeterli sanal disk alanı oluşturma
