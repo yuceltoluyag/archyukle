@@ -54,6 +54,7 @@ mkfs.ext4 -L root $d2 # -F -F
 swapon $d1
 mount $d2 /mnt -o data=writeback,relatime
 echo -e "$red (1/3) >>>>> Yansılar Ayarlanıyor.              $reset"
+sudo pacman -Syy reflector
 sudo reflector --verbose --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
 echo -e "$red (1/4) >>>>> Temel Sistem paketleri yükleniyor.       $reset"
 pacstrap /mnt --noconfirm base base-devel git zsh vim grub openssh
@@ -74,11 +75,11 @@ arch-chroot /mnt systemctl enable sshd
 arch-chroot /mnt grub-install --target=i386-pc --recheck $disk
 arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 arch-chroot /mnt passwd
-mkdir -p /mnt/root/.ssh
+mkdir -p /mnt/ayar/
+mkdir -p /mnt/root/
 curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/ayar.sh" -o /mnt/ayar/config.sh
   chmod +x /mnt/ayar/config.sh
    arch-chroot /mnt /ayar/config.sh
 umount -R /mnt
 read yolo
 [ -z "$yolo" ] && reboot
-
