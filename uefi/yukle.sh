@@ -91,7 +91,7 @@ sistemkonfigure() {
   echo -e "$red (1/2) >>>>> Fstab Dosyanız oluşturuluyor.          $reset"
   genfstab -L -p /mnt >> /mnt/etc/fstab
    mkdir -p /mnt/ayar/
-curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/ayar.sh" -o /mnt/ayar/config.sh
+curl "https://raw.githubusercontent.com/yuceltoluyag/archyukle/master/uefi/ayar.sh" -o /mnt/ayar/config.sh
   chmod +x /mnt/ayar/config.sh
    arch-chroot /mnt /ayar/config.sh
 }
