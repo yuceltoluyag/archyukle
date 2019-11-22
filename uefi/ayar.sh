@@ -81,6 +81,7 @@ bootayarlari() {
   grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=arch_grub
 
   echo -e "$red (2/2) >>>>> Grub Dosyası oluşturuluyor         $reset"
+  pacman -S linux
   mkinitcpio -p linux
   sleep 4
   grub-mkconfig -o /boot/grub/grub.cfg

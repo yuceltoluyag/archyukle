@@ -80,6 +80,7 @@ bootayarlari() {
   grub-install --target=i386-pc /dev/"$diskname"
 
   echo -e "$red (2/2) >>>>> Grub Dosyası oluşturuluyor         $reset"
+  pacman -S linux
   mkinitcpio -p linux
   sleep 4
   grub-mkconfig -o /boot/grub/grub.cfg
