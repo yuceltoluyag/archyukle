@@ -5,7 +5,8 @@ red='\033[31m'
 reset='\033[0m'
 CONSOLE_KEYMAP="trq"
 CONSOLE_FONT="iso09.16"
-
+sudo pacman -Syy
+setfont iso02-12x22
 #announce
 function kontrol {
   >&2 echo -n "$1"
@@ -54,11 +55,10 @@ diskayarlari() {
   read diskname
   
   echo -e "$red (3/5) >>>>> Diskleri bölme işlemi başlıyor.             $reset"
-  parted -s --align optimal /dev/$diskname mklabel gpt
+  parted -s --align optimal /dev/$diskname mklabel msdos
   parted -s --align optimal /dev/$diskname mkpart primary 0% 512M
   parted -s --align optimal /dev/$diskname mkpart primary 1G 3G
-  parted -s --align optimal /dev/$diskname mkpart primary 8G  15G
-  parted -s --align optimal /dev/$diskname mkpart primary 100G 100%
+  parted -s --align optimal /dev/$diskname mkpart primary 3G 100%
 
   echo -e "$red (4/5) >>>>> Diskler Formatlanıyor.           $reset"
   mkfs.fat -F32 /dev/"$diskname"1
@@ -70,16 +70,16 @@ diskayarlari() {
   echo -e "$red (5/5) >>>>> Diskler Sisteme Yerleştiriliyor.          $reset"
   mount /dev/"$diskname"3 /mnt
   mkdir -p /mnt/boot
+  mkdir -p /mnt/ayar
   mount /dev/"$diskname"1 /mnt/boot
-  mkdir -p /mnt/home
-  mount /dev/"$diskname"4 /mnt/home
   lsblk
   sleep 5
 }
 
 yukleyici() {
   echo -e "$red (1/2) >>>>> Yansılar Ayarlanıyor.              $reset"
-  sudo pacman -S reflector --noconfirm
+  sudo pacman -Syy
+  sudo pacman -S reflector
   sudo reflector --verbose --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
   echo -e "$red (2/2) >>>>> Temel Sistem paketleri yükleniyor.       $reset"
   pacstrap -i /mnt base base-devel
