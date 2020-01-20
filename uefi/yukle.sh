@@ -84,7 +84,7 @@ yukleyici() {
   sudo reflector --verbose --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
   echo -e "$red (2/2) >>>>> Temel Sistem paketleri yükleniyor.       $reset"
   pacstrap -i /mnt base base-devel
-  pacstrap /mnt grub os-prober
+  pacstrap /mnt grub efibootmgr
 }
 
 sistemkonfigure() {
