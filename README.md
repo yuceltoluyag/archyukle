@@ -2,7 +2,9 @@
 
 Merhaba ! kolay arch linux kurulumu ile kurulum otomatik olarak tamamlanacaktır **Test**. Aşamasındandır geliştirmeye devam ediyorum.
 
-$ sh -c "$(curl -sL git.io/Jeikl)"
+sh -c "$(curl -sL bit.ly/3rdiAIt)"
+
+sonra düzenlerim =)
 
 # 2 Yıl Sonra gelen Güncelleme
 
