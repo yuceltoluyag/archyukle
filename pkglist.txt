@@ -1,0 +1,191 @@
+# Basic packages i want on all my systems
+
+# System
+xorg-server
+xorg-xinit
+xorg-apps
+aic94xx-firmware                # Missing Firmware
+upd72020x-fw                    # Missing Firmware 2
+wd719x-firmware                 # Missing Firmware 3
+base-devel                      # Building tools
+
+# Utils
+virtualbox                      # Virtual Machine Simulator
+gputest                         # Cross-platform GPU stress test
+dotdrop                         # dotfiles manager
+mons                            # Monitor management
+mugshot                         # Program to update personal user details
+n30f-git                        # borderless and transparent non-wm-managed window
+ocs-url                         # An install helper program (ocs://)
+pikaur                          # Aur management
+simple-mtpfs                    # filesystem that supports reading/writing from MTP devices
+telegram-desktop-bin            # Chat Program
+google-chrome                   # Web browser
+lm_sensors                      # Temp sensors
+xdg-user-dirs
+mesa
+xf86-video-intel
+xf86-video-nouveau
+xf86-video-vesa
+xterm
+ffmpegthumbnailer
+raw-thumbnailer
+tumbler
+tumbler-extra-thumbnailers      # Customized thumbnailers for Tumbler
+thermald
+thunar
+thunar-volman
+gimp
+kdenlive
+git
+gucharmap
+gvfs
+ntfs-3g
+gvfs-afc
+gvfs-mtp
+network-manager-applet
+nm-connection-editor
+networkmanager
+networkmanager-openconnect
+networkmanager-openvpn
+networkmanager-pptp
+networkmanager-vpnc
+clipmenu-git
+imwheel
+maim
+neofetch
+newsboat
+redshift
+ripgrep
+screenkey
+wmctrl
+bluez
+bluez-utils
+bluez-tools
+
+# i3 & Utils
+
+i3-wm                           # Window Manager
+i3ass                           # A bash-script collection
+i3ipc-python-git                # An improved Python library to control i3wm
+i3lock-fancy-git                # i3lock-color script: blurs background
+polybar                         # A fast and easy-to-use status bar
+pywal-git                       # Generate and change color-schemes on the fly.
+wpgtk-git                       # A gui wallpaper chooser that changes your
+rofi-greenclip                  # Clipboard manager to use with rofi
+dmenu
+dunst
+feh
+sxiv
+rofi
+
+# Theme & Function
+
+gtkrc-reload                    # Reload the gtkrc configuration
+damadamas-icon-theme-git        # DamaDamas icons
+font-manager-git                # simple font management application
+gtk-engine-murrine
+lightdm
+lightdm-gtk-greeter
+lxappearance
+
+
+
+# Fonts
+
+nerd-fonts-dejavu-complete      # Sexy Font 1
+nerd-fonts-source-code-pro      # Sexy Font 2
+otf-operator-mono-lig           # Sexy Font 3
+otf-sfmono-patched              # Sexy Font 4
+otf-vollkorn                    # Sexy Font 5
+powerline-fonts-git             # Sexy Font 6
+siji-git                        # Sexy Font 7
+termsyn-font                    # Sexy Font 8
+ttf-font-awesome-4              # Sexy Font 9
+ttf-iosevka                     # Sexy Font 10
+ttf-material-design-icons       # Sexy Font 11
+ttf-monoid                      # Sexy Font 12
+ttf-weather-icons               # Sexy Font 13
+ttf-wps-fonts                   # Sexy Font 14
+noto-fonts-emoji                # Sexy Font 15
+ttf-anonymous-pro               # Sexy Font 16
+ttf-croscore                    # Sexy Font 17
+ttf-dejavu                      # Sexy Font 18
+ttf-droid                       # Sexy Font 19
+ttf-font-awesome                # Sexy Font 20
+ttf-inconsolata                 # Sexy Font 21
+ttf-liberation                  # Sexy Font 22
+ttf-roboto                      # Sexy Font 23
+ttf-ubuntu-font-family          # Sexy Font 24
+
+# Sound
+alsa-oss                        # OSS compatibility library
+alsa-utils                      # Advanced Linux Sound Architecture - Utilities
+alsa-plugins
+pavucontrol
+playerctl
+pulseaudio
+pulseaudio-alsa
+pulseaudio-bluetooth
+pulseaudio-jack
+pulsemixer
+cava                            # Console-based Audio Visualizer for Alsa
+mpc
+mpd
+mpv
+ncmpcpp
+
+# Custom For Thinkpad W520
+thinkfan                        # Thinkpad Fan Manager
+tp_smapi-dkms
+acpid  # Laptop acpid.service
+
+# Terminal apps
+awesome-terminal-fonts-patched  # Awesome terminal fonts patching strategy
+ranger                          # Awesome terminal based file manager
+lf                              # A terminal file manager inspred by ranger written in Go
+lscolors-git                    # Colorize the output of the "ls" shell command via LS_COLORS
+mpd-notification                # Notify about tracks played by mpd
+openssh                         # SSH
+bash-completion                 # Bash compilation
+man-pages                       # Linux man pages
+sshfs                           # Mount SSH drives
+oh-my-zsh-git                   # Z shell
+zsh-completions                 # Zsh Additional completion
+zsh-syntax-highlighting         # Zsh syntax highlighting
+zsh-autosuggestions             # Zsh Fish like suggestions
+neovim                          # better VIM editor
+nano                            # Fallback editor
+ripgrep                         # Better, faster grep
+fzf                             # A better fuzzy finder
+bat                             # Cat with syntax highlighting
+mlocate                         # locate/updatedb
+tree                            # tree
+nnn                             # Terminal file manager
+trash-cli                       # Trash cli, for nnn
+weechat                         # IRC client
+tmux                            # Terminal multiplexer
+iperf3                          # Network speed test
+ookla-speedtest-bin             # Speedtest.net CLI client (AUR)
+htop                            # Process viewer
+pv                              # Pipe viewer
+whois                           # Domain lookup
+neofetch                        # Terminal splash
+expac                           # pacman database extraction utility
+reflector                       # Pacman mirror update
+rsync                           # Rsync
+gotop                           # Console-based graphical activity monitor
+xcape
+xclip
+xsel
+youtube-dl                      # Youtube video downloader
+toilet                          # free replacement for the FIGlet utility.
+file-roller                     # File Roller
+unzip                           # Zip archive
+unrar                           # Rar archive
+p7zip                           # 7zip archive
+gzip
+xarchiver
+
+
+# vim: set ts=4 sw=4 tw=0 et :
