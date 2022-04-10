@@ -289,8 +289,6 @@ genfstab -U /mnt >> /mnt/etc/fstab
 
 # Setting username.
 read -r -p "Lütfen bir kullanıcı hesabı için ad girin: " username
-arch-chroot /mnt useradd -m -g users -G optical,storage,wheel,video,audio,users,power,network,log -s /bin/bash "$username"
-sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' /mnt/etc/sudoers
 userpass_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
 rootpass_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
 locale_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("

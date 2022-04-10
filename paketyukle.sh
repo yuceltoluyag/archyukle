@@ -19,7 +19,7 @@ checkgit(){
         echo [x]::[Bilgi]: Sistemde Git Kurulumu Bulunamadı ;
         echo ""
         echo [!]::[Lütfen Bekleyin]: Git Yükleniyor ..  ;
-        pacman -S git --noconfirm
+        _s sudo pacman -S git --noconfirm
         echo ""
     fi
     sleep 1
@@ -34,7 +34,7 @@ checkwget(){
         echo [x]::[Bilgi]:Sistemde Wget Kurulumu Bulunamadı ;
         echo ""
         echo [!]::[Lütfen Bekleyin]: Wget Yükleniyor ;
-        pacman -S --noconfirm wget
+        _s sudo pacman -S --noconfirm wget
         echo sleep 2
         echo ""
     fi
@@ -48,6 +48,7 @@ checkyay(){
         echo [✔]::[Yay]: Kuruluma Mevcut!;
     else
         echo [x]::[uyarı]:bu komut dosyası Yay paket yöneticisini gerektirir ;
+        rm -rf yay
         echo ""
         echo [!]::[Lütfen Bekleyin]: Yay Paket Yöneticisi Yükleniyor ..  ;
         git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si
@@ -76,7 +77,7 @@ initpacmanupd(){
     echo ""
     echo; echo -e "\033[1m Güncelleme Kontrolleri ..... \e[0m\E[31m| Lütfen güncellemeden önce herhangi bir yükleme işlemi varsa durdurun\e[0m";
     echo
-    pacman -Syu --noconfirm;
+    _s sudo pacman -Syu --noconfirm;
     echo "Güncelleme Tamamlandı";
     sleep 1;
 }
@@ -92,28 +93,29 @@ package_install(){
     read -rep "Tüm paketleri yüklensin mi? [e/H] " install
     [ "$install" != "${install#[Ee]}" ] || exit 0
     
-    sudo pacman --noconfirm --needed --ask 4 -S $packages
+    _s sudo pacman --noconfirm --needed --ask 4 -S $packages
     for aur in $aurpackages; do
-        "$aurcmd" -S --noconfirm "$aur"
+        _s "$aurcmd" -S --noconfirm "$aur"
     done
+    showresult
 }
 
 # Enabeling installed services
 archer_services() {
-    printm 'Enabeling services (Created symlink "errors" can be ignored)'
+    printm 'Yüklü Hizmetleri etkinleştirme (Symlink "hataları" yoksayılabilir)'
     # Services: network manager
     if pacman -Q networkmanager &>/dev/null ; then
-        _s systemctl enable NetworkManager.service
-        _s systemctl enable NetworkManager-wait-online.service
+        _s sudo systemctl enable NetworkManager.service
+        _s sudo systemctl enable NetworkManager-wait-online.service
         
         elif pacman -Q connman &>/dev/null ; then
-        _s systemctl enable connman.service
+        _s sudo systemctl enable connman.service
         
         elif pacman -Q wicd &>/dev/null ; then
-        _s systemctl enable wicd.service
+        _s sudo systemctl enable wicd.service
         
         elif pacman -Q dhcpcd &>/dev/null ; then
-        _s systemctl enable dhcpcd.service
+        _s sudo systemctl enable dhcpcd.service
         
     else
         eth="$(basename /sys/class/net/en*)"
@@ -124,68 +126,68 @@ archer_services() {
         [ -d "/sys/class/net/$wifi" ] && \
         printf "[Match]\nName=%s\n\n[Network]\nDHCP=yes\n\n[DHCP]\nRouteMetric=20" "$wifi" \
         > /etc/systemd/network/25-wireless.network
-        _s systemctl enable systemd-networkd.service
-        _s systemctl enable systemd-networkd-wait-online.service
-        _s systemctl enable systemd-resolved.service
+        _s sudo systemctl enable systemd-networkd.service
+        _s sudo systemctl enable systemd-networkd-wait-online.service
+        _s sudo systemctl enable systemd-resolved.service
         umount /etc/resolv.conf 2>/dev/null
         _s ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
     fi
     
     # Services: display manager
     if pacman -Q lightdm &>/dev/null ; then
-        _s systemctl enable lightdm.service
+        _s sudo systemctl enable lightdm.service
         
         elif pacman -Q lxdm &>/dev/null ; then
-        _s systemctl enable lxdm.service
+        _s sudo systemctl enable lxdm.service
         
         elif pacman -Q gdm &>/dev/null ; then
-        _s systemctl enable gdm.service
+        _s sudo systemctl enable gdm.service
         
         elif pacman -Q sddm &>/dev/null ; then
-        _s systemctl enable sddm.service
+        _s sudo systemctl enable sddm.service
         
         elif pacman -Q xorg-xdm &>/dev/null ; then
-        _s systemctl enable xdm.service
+        _s sudo systemctl enable xdm.service
         
         elif pacman -Qs entrance &>/dev/null ; then
-        _s systemctl enable entrance.service
+        _s sudo systemctl enable entrance.service
     fi
     
     # Services: other
     if pacman -Q util-linux &>/dev/null ; then
-        _s systemctl enable fstrim.timer
+        _s sudo systemctl enable fstrim.timer
     fi
     
     if pacman -Q bluez &>/dev/null ; then
-        _s systemctl enable bluetooth.service
+        _s sudo systemctl enable bluetooth.service
     fi
     
     if pacman -Q modemmanager &>/dev/null ; then
-        _s systemctl enable ModemManager.service
+        _s sudo systemctl enable ModemManager.service
     fi
     
     if pacman -Q ufw &>/dev/null ; then
-        _s systemctl enable ufw.service
+        _s sudo systemctl enable ufw.service
     fi
     
     if pacman -Q libvirt &>/dev/null ; then
-        _s systemctl enable libvirtd.service
+        _s sudo systemctl enable libvirtd.service
     fi
     
     if pacman -Q avahi &>/dev/null ; then
-        _s systemctl enable avahi-daemon.service
+        _s sudo systemctl enable avahi-daemon.service
     fi
     
     if pacman -Q cups &>/dev/null ; then
-        _s systemctl enable cups.service
+        _s sudo systemctl enable cups.service
     fi
     
     if pacman -Q autorandr &>/dev/null ; then
-        _s systemctl enable autorandr.service
+        _s sudo systemctl enable autorandr.service
     fi
     
     if pacman -Q auto-cpufreq &>/dev/null ; then
-        _s systemctl enable auto-cpufreq.service
+        _s sudo systemctl enable auto-cpufreq.service
     fi
     showresult
 }
@@ -197,13 +199,13 @@ _e() { "$@" 2>>err.o || err=true; }
 # Printing OK/ERROR
 showresult() {
     if [ "$err" ] ; then
-        printf ' \e[1;31m[ERROR]\e[m\n'
+        printf ' \e[1;31m[HATA]\e[m\n'
         cat err.o 2>/dev/null
-        printf '\e[1mExit installer? [y/N]\e[m\n'
+        printf '\e[1mYükleyiciden çık? [e/H]\e[m\n'
         read -r exit
-        [ "$exit" != "${exit#[Yy]}" ] && exit
+        [ "$exit" != "${exit#[Ee]}" ] && exit
     else
-        printf ' \e[1;32m[OK]\e[m\n'
+        printf ' \e[1;32m[Çıkış Yapıldı]\e[m\n'
     fi
     rm -f err.o
     unset err
