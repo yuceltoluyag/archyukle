@@ -19,7 +19,7 @@ checkgit(){
         echo [x]::[Bilgi]: Sistemde Git Kurulumu Bulunamadı ;
         echo ""
         echo [!]::[Lütfen Bekleyin]: Git Yükleniyor ..  ;
-        _s sudo pacman -S git --noconfirm
+        sudo pacman -S git --noconfirm
         echo ""
     fi
     sleep 1
@@ -34,7 +34,7 @@ checkwget(){
         echo [x]::[Bilgi]:Sistemde Wget Kurulumu Bulunamadı ;
         echo ""
         echo [!]::[Lütfen Bekleyin]: Wget Yükleniyor ;
-        _s sudo pacman -S --noconfirm wget
+        sudo pacman -S --noconfirm wget
         echo sleep 2
         echo ""
     fi
@@ -77,25 +77,25 @@ initpacmanupd(){
     echo ""
     echo; echo -e "\033[1m Güncelleme Kontrolleri ..... \e[0m\E[31m| Lütfen güncellemeden önce herhangi bir yükleme işlemi varsa durdurun\e[0m";
     echo
-    _s sudo pacman -Syu --noconfirm;
+    sudo pacman -Syu --noconfirm;
     echo "Güncelleme Tamamlandı";
     sleep 1;
 }
 
 package_install(){
-    echo "Paketler Yükleniyor:"
+    echo "Pacman Paketleri:"
     echo "$packages"
     echo
-    echo "AUR paketleri Kurulacak:"
+    echo "AUR paketleri:"
     echo "$aurpackages"
     echo
     
     read -rep "Tüm paketleri yüklensin mi? [e/H] " install
     [ "$install" != "${install#[Ee]}" ] || exit 0
     
-    _s sudo pacman --noconfirm --needed --ask 4 -S $packages
+    sudo pacman --noconfirm --needed --ask 4 -S $packages
     for aur in $aurpackages; do
-        _s "$aurcmd" -S --noconfirm "$aur"
+        "$aurcmd" -S --noconfirm "$aur"
     done
     showresult
 }
@@ -105,17 +105,17 @@ archer_services() {
     printm 'Yüklü Hizmetleri etkinleştirme (Symlink "hataları" yoksayılabilir)'
     # Services: network manager
     if pacman -Q networkmanager &>/dev/null ; then
-        _s sudo systemctl enable NetworkManager.service
-        _s sudo systemctl enable NetworkManager-wait-online.service
+        sudo systemctl enable NetworkManager.service
+        sudo systemctl enable NetworkManager-wait-online.service
         
         elif pacman -Q connman &>/dev/null ; then
-        _s sudo systemctl enable connman.service
+        sudo systemctl enable connman.service
         
         elif pacman -Q wicd &>/dev/null ; then
-        _s sudo systemctl enable wicd.service
+        sudo systemctl enable wicd.service
         
         elif pacman -Q dhcpcd &>/dev/null ; then
-        _s sudo systemctl enable dhcpcd.service
+        sudo systemctl enable dhcpcd.service
         
     else
         eth="$(basename /sys/class/net/en*)"
@@ -126,68 +126,68 @@ archer_services() {
         [ -d "/sys/class/net/$wifi" ] && \
         printf "[Match]\nName=%s\n\n[Network]\nDHCP=yes\n\n[DHCP]\nRouteMetric=20" "$wifi" \
         > /etc/systemd/network/25-wireless.network
-        _s sudo systemctl enable systemd-networkd.service
-        _s sudo systemctl enable systemd-networkd-wait-online.service
-        _s sudo systemctl enable systemd-resolved.service
+        sudo systemctl enable systemd-networkd.service
+        sudo systemctl enable systemd-networkd-wait-online.service
+        sudo systemctl enable systemd-resolved.service
         umount /etc/resolv.conf 2>/dev/null
-        _s ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+        ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
     fi
     
     # Services: display manager
     if pacman -Q lightdm &>/dev/null ; then
-        _s sudo systemctl enable lightdm.service
+        sudo systemctl enable lightdm.service
         
         elif pacman -Q lxdm &>/dev/null ; then
-        _s sudo systemctl enable lxdm.service
+        sudo systemctl enable lxdm.service
         
         elif pacman -Q gdm &>/dev/null ; then
-        _s sudo systemctl enable gdm.service
+        sudo systemctl enable gdm.service
         
         elif pacman -Q sddm &>/dev/null ; then
-        _s sudo systemctl enable sddm.service
+        sudo systemctl enable sddm.service
         
         elif pacman -Q xorg-xdm &>/dev/null ; then
-        _s sudo systemctl enable xdm.service
+        sudo systemctl enable xdm.service
         
         elif pacman -Qs entrance &>/dev/null ; then
-        _s sudo systemctl enable entrance.service
+        sudo systemctl enable entrance.service
     fi
     
     # Services: other
     if pacman -Q util-linux &>/dev/null ; then
-        _s sudo systemctl enable fstrim.timer
+        sudo systemctl enable fstrim.timer
     fi
     
     if pacman -Q bluez &>/dev/null ; then
-        _s sudo systemctl enable bluetooth.service
+        sudo systemctl enable bluetooth.service
     fi
     
     if pacman -Q modemmanager &>/dev/null ; then
-        _s sudo systemctl enable ModemManager.service
+        sudo systemctl enable ModemManager.service
     fi
     
     if pacman -Q ufw &>/dev/null ; then
-        _s sudo systemctl enable ufw.service
+        sudo systemctl enable ufw.service
     fi
     
     if pacman -Q libvirt &>/dev/null ; then
-        _s sudo systemctl enable libvirtd.service
+        sudo systemctl enable libvirtd.service
     fi
     
     if pacman -Q avahi &>/dev/null ; then
-        _s sudo systemctl enable avahi-daemon.service
+        sudo systemctl enable avahi-daemon.service
     fi
     
     if pacman -Q cups &>/dev/null ; then
-        _s sudo systemctl enable cups.service
+        sudo systemctl enable cups.service
     fi
     
     if pacman -Q autorandr &>/dev/null ; then
-        _s sudo systemctl enable autorandr.service
+        sudo systemctl enable autorandr.service
     fi
     
     if pacman -Q auto-cpufreq &>/dev/null ; then
-        _s sudo systemctl enable auto-cpufreq.service
+        sudo systemctl enable auto-cpufreq.service
     fi
     showresult
 }
