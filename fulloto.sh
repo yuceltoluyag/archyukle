@@ -18,13 +18,13 @@ sleep 5
 # Source variables
 logo(){
     echo -e "${R}
-                      /\\
+                     		      /\\
 				     /  \\    ${G}Yucel Toluyağ${G}
 				    / /\\ \\   ${G}Archlinux İnstaller${G}
 				   / /  \\ \\  ${G}github.com/yuceltoluyag${G}
 				  / /    \\ \\
 				 / / _____\\ \\
-    /_/  \`----.\\_\\ ${B}"
+    				/_/  \`----.\\_\\ ${B}"
     
     print "Arch Linux kurulum sürecini basitleştirmek için yapılmış bir komut dosyası olan Arcyukle'ye hoş geldiniz."
     PS3="Lütfen diskin numarasını seçin.Disk Numarası: "
