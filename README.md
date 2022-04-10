@@ -2,9 +2,18 @@
 
 Merhaba ! kolay arch linux kurulumu ile kurulum otomatik olarak tamamlanacaktır **Test**. Aşamasındandır geliştirmeye devam ediyorum.
 
-sh -c "$(curl -sL bit.ly/3rdiAIt)"
-
-sonra düzenlerim =)
+```bash
+pacman -Sy git
+git clone https://github.com/yuceltoluyag/archyukle.git
+cd archyukle
+chmod +x *.sh
+./fulloto.sh
+```
+Kurulum tamamlandıktan sonra :
+```bash
+./paketyukle.sh pkglist.txt
+```
+pkglist dosyasını kendinize göre düzenlemeyi unutmayın.  Mutlaka blog yazımı okuyunuz.
 
 # 2 Yıl Sonra gelen Güncelleme
 
