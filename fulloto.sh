@@ -24,7 +24,7 @@ logo(){
 				   / /  \\ \\  ${G}github.com/yuceltoluyag${G}
 				  / /    \\ \\
 				 / / _____\\ \\
-    /_/  \`----.\\_\\ ${B}"
+    				/_/  \`----.\\_\\ ${B}"
     
     print "Arch Linux kurulum sürecini basitleştirmek için yapılmış bir komut dosyası olan Arcyukle'ye hoş geldiniz."
     PS3="Lütfen diskin numarasını seçin: "
