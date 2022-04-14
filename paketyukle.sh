@@ -18,7 +18,7 @@ checkgit(){
         
         echo [x]::[Bilgi]: Sistemde Git Kurulumu Bulunamadı ;
         echo ""
-        echo [!]::[Lütfen Bekleyin]: Git Yükleniyor ..  ;
+        echo [!]::[Lütfen Bekleyin]: Git Yükleniyor ..;
         sudo pacman -S git --noconfirm
         echo ""
     fi
@@ -50,7 +50,7 @@ checkyay(){
         echo [x]::[uyarı]:bu komut dosyası Yay paket yöneticisini gerektirir ;
         rm -rf yay
         echo ""
-        echo [!]::[Lütfen Bekleyin]: Yay Paket Yöneticisi Yükleniyor ..  ;
+        echo [!]::[Lütfen Bekleyin]: Yay Paket Yöneticisi Yükleniyor ..;
         git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si
         echo ""
     fi
@@ -100,21 +100,35 @@ package_install(){
     showresult
 }
 
+graphic_install(){
+    printm "Ekran Kartınız Yükleniyor"
+    if lspci | grep -E "NVIDIA|GeForce"; then
+        printm "Nvidia Kart Tespit Edildi"
+        sudo pacman --noconfirm --needed nvidia nvidia-settings
+        elif lspci | grep -E "Radeon"; then
+        printm "Radeon Kart Tespit Edildi"
+        sudo pacman --noconfirm --needed xf86-video-amdgpu
+        elif lspci | grep -E "Integrated Graphics Controller"; then
+        printm "Entegre Grafik Kartı Tespit Edildi"
+        sudo pacman --noconfirm --needed libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-intel-driver libva-utils
+    fi
+}
+
 # Enabeling installed services
 archer_services() {
     printm 'Yüklü Hizmetleri etkinleştirme (Symlink "hataları" yoksayılabilir)'
     # Services: network manager
-    if pacman -Q networkmanager &>/dev/null ; then
+    if pacman -Q networkmanager; then
         sudo systemctl enable NetworkManager.service
         sudo systemctl enable NetworkManager-wait-online.service
         
-        elif pacman -Q connman &>/dev/null ; then
+        elif pacman -Q connman; then
         sudo systemctl enable connman.service
         
-        elif pacman -Q wicd &>/dev/null ; then
+        elif pacman -Q wicd; then
         sudo systemctl enable wicd.service
         
-        elif pacman -Q dhcpcd &>/dev/null ; then
+        elif pacman -Q dhcpcd; then
         sudo systemctl enable dhcpcd.service
         
     else
@@ -134,61 +148,70 @@ archer_services() {
     fi
     
     # Services: display manager
-    if pacman -Q lightdm &>/dev/null ; then
+    if pacman -Q lightdm; then
         sudo systemctl enable lightdm.service
         
-        elif pacman -Q lxdm &>/dev/null ; then
+        elif pacman -Q lxdm; then
         sudo systemctl enable lxdm.service
         
-        elif pacman -Q gdm &>/dev/null ; then
+        elif pacman -Q gdm; then
         sudo systemctl enable gdm.service
         
-        elif pacman -Q sddm &>/dev/null ; then
+        elif pacman -Q sddm; then
         sudo systemctl enable sddm.service
         
-        elif pacman -Q xorg-xdm &>/dev/null ; then
+        elif pacman -Q xorg-xdm; then
         sudo systemctl enable xdm.service
         
-        elif pacman -Qs entrance &>/dev/null ; then
+        elif pacman -Qs entrance; then
         sudo systemctl enable entrance.service
     fi
     
     # Services: other
-    if pacman -Q util-linux &>/dev/null ; then
+    if pacman -Q util-linux; then
         sudo systemctl enable fstrim.timer
     fi
     
-    if pacman -Q bluez &>/dev/null ; then
+    if pacman -Q bluez; then
         sudo systemctl enable bluetooth.service
     fi
     
-    if pacman -Q modemmanager &>/dev/null ; then
+    if pacman -Q modemmanager; then
         sudo systemctl enable ModemManager.service
     fi
     
-    if pacman -Q ufw &>/dev/null ; then
+    if pacman -Q ufw; then
         sudo systemctl enable ufw.service
     fi
     
-    if pacman -Q libvirt &>/dev/null ; then
+    if pacman -Q libvirt; then
         sudo systemctl enable libvirtd.service
     fi
     
-    if pacman -Q avahi &>/dev/null ; then
+    if pacman -Q avahi; then
         sudo systemctl enable avahi-daemon.service
     fi
     
-    if pacman -Q cups &>/dev/null ; then
+    if pacman -Q cups; then
         sudo systemctl enable cups.service
     fi
     
-    if pacman -Q autorandr &>/dev/null ; then
+    if pacman -Q autorandr; then
         sudo systemctl enable autorandr.service
     fi
     
-    if pacman -Q auto-cpufreq &>/dev/null ; then
+    if pacman -Q auto-cpufreq; then
         sudo systemctl enable auto-cpufreq.service
     fi
+    
+    if pacman -Q thermald; then
+        sudo systemctl enable thermald.service
+    fi
+    
+    if pacman -Q tlp; then
+        sudo systemctl enable tlp.service
+    fi
+    
     showresult
 }
 
@@ -210,6 +233,8 @@ showresult() {
     rm -f err.o
     unset err
 }
+
+
 
 # Padding
 width=$(($(tput cols)-15))

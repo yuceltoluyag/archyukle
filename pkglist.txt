@@ -62,6 +62,7 @@ wmctrl
 bluez
 bluez-utils
 bluez-tools
+blueberry
 
 # i3 & Utils
 
@@ -128,6 +129,7 @@ pulseaudio
 pulseaudio-alsa
 pulseaudio-bluetooth
 pulseaudio-jack
+pulseaudio-ctl
 pulsemixer
 cava                            # Console-based Audio Visualizer for Alsa
 mpc
@@ -137,10 +139,13 @@ ncmpcpp
 
 # Custom For Thinkpad W520
 thinkfan                        # Thinkpad Fan Manager
-tp_smapi-dkms
-acpid  # Laptop acpid.service
+tp_smapi
+acpid                           # Laptop acpid.service
+acpi_call
+tlp
 
 # Terminal apps
+alacritty
 awesome-terminal-fonts-patched  # Awesome terminal fonts patching strategy
 ranger                          # Awesome terminal based file manager
 lf                              # A terminal file manager inspred by ranger written in Go
