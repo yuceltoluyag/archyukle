@@ -15,6 +15,11 @@ Kurulum tamamlandıktan sonra :
 ```
 pkglist dosyasını kendinize göre düzenlemeyi unutmayın.  Mutlaka blog yazımı okuyunuz.
 
+
+
+[![VIDEO](https://i.ytimg.com/vi/wqs69m9ZDjo/hqdefault.jpg)](https://youtu.be/wqs69m9ZDjo)
+
+
 # 2 Yıl Sonra gelen Güncelleme
 
 Detaylar Muhteşem Blogumda :D [Kalitenin Bir Numaralı Adresine Hoşgeldiniz](https://yuceltoluyag.github.io/) 😅 😂 🤣
