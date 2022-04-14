@@ -2,13 +2,13 @@
 
 # Cleaning the TTY.
 clear
-setfont iso09.16
+setfont LatArCyrHeb-19.psfu.gz
 #LOG_FILE="arcbaba.log"
 
 print () {
     echo -e "\e[1m\e[93m[ \e[92m•\e[93m ] \e[4m$1\e[0m"
 }
-error() { printf "%s\n" "$1" >&2; exit 1; }
+error() { printf "%s\n" "$1"; exit 1; }
 print "Doğru Disk Adını Seçebilmeniz için Sistemdeki Aygıtlarınız Gösterilecek"
 lsblk
 sleep 5
@@ -24,10 +24,10 @@ logo(){
 				   / /  \\ \\  ${G}github.com/yuceltoluyag${G}
 				  / /    \\ \\
 				 / / _____\\ \\
-    				/_/  \`----.\\_\\ ${B}"
+    /_/  \`----.\\_\\ ${B}"
     
     print "Arch Linux kurulum sürecini basitleştirmek için yapılmış bir komut dosyası olan Arcyukle'ye hoş geldiniz."
-    PS3="Lütfen diskin numarasını seçin.Disk Numarası: "
+    PS3="Lütfen diskin numarasını seçin: "
     select ENTRY in $(lsblk -dpnoNAME|grep -P "/dev/sd|nvme|vd");
     do
         DISK=$ENTRY
@@ -41,7 +41,7 @@ logo(){
 internet_check(){
     ### check internet availability
     print "İnternet Bağlantınız Kontrol Ediliyor...\n"
-    if ! curl -Ism 5 https://www.google.com >/dev/null; then
+    if ! curl -Ism 5 https://www.google.com ; then
         print "İnternet Bağlantınız Başarız Oldu\n"
         exit
     fi
@@ -53,30 +53,30 @@ virt_check () {
     case $hypervisor in
         kvm )   print "KVM  Kullandığınız Tespit Edildi."
             print "Gerekli Paketler Otomatik Yüklenecek..."
-            pacstrap /mnt qemu-guest-agent >/dev/null
+            pacstrap /mnt qemu-guest-agent
             print "Paketler Etkinleştiriliyor.."
-            systemctl enable qemu-guest-agent --root=/mnt &>/dev/null
+            systemctl enable qemu-guest-agent --root=/mnt
         ;;
         vmware  )   print "VMWare Workstation Kullandığınız Tespit Edildi."
             print "Gerekli Paketler Otomatik Yüklenecek..."
-            pacstrap /mnt open-vm-tools >/dev/null
+            pacstrap /mnt open-vm-tools
             print "Paketler Etkinleştiriliyor.."
-            systemctl enable vmtoolsd --root=/mnt &>/dev/null
-            systemctl enable vmware-vmblock-fuse --root=/mnt &>/dev/null
+            systemctl enable vmtoolsd --root=/mnt
+            systemctl enable vmware-vmblock-fuse --root=/mnt
         ;;
         oracle )    print "VirtualBox Kullandığınız Tespit Edildi."
             print "Gerekli Paketler Otomatik Yüklenecek..."
-            pacstrap /mnt virtualbox-guest-utils >/dev/null
+            pacstrap /mnt virtualbox-guest-utils
             print "Paketler Etkinleştiriliyor.."
-            systemctl enable vboxservice --root=/mnt &>/dev/null
+            systemctl enable vboxservice --root=/mnt
         ;;
         microsoft ) print "Hyper-V  Kullandığınız Tespit Edildi."
             print "Gerekli Paketler Otomatik Yüklenecek..."
-            pacstrap /mnt hyperv >/dev/null
+            pacstrap /mnt hyperv
             print "Paketler Etkinleştiriliyor.."
-            systemctl enable hv_fcopy_daemon --root=/mnt &>/dev/null
-            systemctl enable hv_kvp_daemon --root=/mnt &>/dev/null
-            systemctl enable hv_vss_daemon --root=/mnt &>/dev/null
+            systemctl enable hv_fcopy_daemon --root=/mnt
+            systemctl enable hv_kvp_daemon --root=/mnt
+            systemctl enable hv_vss_daemon --root=/mnt
         ;;
         * ) ;;
     esac
@@ -116,25 +116,25 @@ network_selector () {
     read -r -p "Yüklemek istediğiniz ağ yardımcısının numarasını girin: " choice
     case $choice in
         1 ) print "IWD Yükleniyor"
-            pacstrap /mnt iwd >/dev/null
+            pacstrap /mnt iwd
             print "IWD Etkinleştiriliyor."
-            systemctl enable iwd --root=/mnt &>/dev/null
+            systemctl enable iwd --root=/mnt
         ;;
         2 ) print "NetworkManager Yükleniyor."
-            pacstrap /mnt networkmanager >/dev/null
+            pacstrap /mnt networkmanager
             print "NetworkManager Etkinleştiriliyor."
-            systemctl enable NetworkManager --root=/mnt &>/dev/null
+            systemctl enable NetworkManager --root=/mnt
         ;;
         3 ) print "Yükleniyor wpa_supplicant and dhcpcd."
-            pacstrap /mnt wpa_supplicant dhcpcd >/dev/null
+            pacstrap /mnt wpa_supplicant dhcpcd
             print "wpa_supplicant ve dhcpcd Etkinleştiriliyor."
-            systemctl enable wpa_supplicant --root=/mnt &>/dev/null
-            systemctl enable dhcpcd --root=/mnt &>/dev/null
+            systemctl enable wpa_supplicant --root=/mnt
+            systemctl enable dhcpcd --root=/mnt
         ;;
         4 ) print "dhcpcd Yükleniyor ."
-            pacstrap /mnt dhcpcd >/dev/null
+            pacstrap /mnt dhcpcd
             print "dhcpcd Etkinleştiriliyor."
-            systemctl enable dhcpcd --root=/mnt &>/dev/null
+            systemctl enable dhcpcd --root=/mnt
         ;;
         5 ) ;;
         * ) print "Geçerli bir seçim yapmadınız."
@@ -158,7 +158,17 @@ userpass_selector () {
         [ "$userpass" = "$userpass2" ] && break
         echo "Şifreler eşleşmiyor, tekrar deneyin."
     done
+    # if [[ ! -d /etc/sudoers.d ]]; then
+    #     print "Sudo kurulu değil Sanki Amdin Kardeş. '/etc/sudoers.d' dizini Oluştursak mı ?."
+    # fi
+    # print " $username kullanıcıya yetki veriliyor"
+    # arch-chroot /mnt useradd -m -g users -G optical,storage,wheel,video,audio,users,power,network,log -s /bin/bash "$username"
+    # sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' /mnt/etc/sudoers
+    # print "$username şifresi ayarlanıyor"
+    # echo "$username:$userpass" | arch-chroot /mnt chpasswd
 }
+
+
 
 # Setting up a password for the root account (function).
 rootpass_selector () {
@@ -233,18 +243,21 @@ part_disk(){
         print "Disk bölme işlemi başlıyor. $DISK."
         # setup grub
         if [ -d /sys/firmware/efi/efivars ]; then
-            print "$DISK UEFI Sisteme Göre Formatlanıyor"
+            print "$DISK UEFI Sisteme Göre Biçimlendiriliyor"
+            print "Siliniyor $DISK."
+            wipefs -af "$DISK"
+            sgdisk -Zo "$DISK"
             parted -s --align optimal $DISK mklabel gpt
-            parted -s --align optimal $DISK mkpart primary  ESP fat32 1M 513M
-            parted -s --align optimal $DISK set 1 boot on
-            parted -s --align optimal $DISK mkpart primary  linux-swap 1G 3G
-            parted -s --align optimal $DISK mkpart primary  513M 100%
+            parted -s --align optimal $DISK mkpart ESP fat32 1M 513M
+            parted -s --align optimal $DISK set 1 esp on
+            parted -s --align optimal $DISK mkpart primary  linux-swap 513M 4G
+            parted -s --align optimal $DISK mkpart primary  4G 100%
         else
-            print "$DISK MBR&BIOS Sisteme Göre Formatlanıyor"
+            print "$DISK MBR&BIOS Sisteme Göre Biçimlendiriliyor"
             parted -s --align optimal $DISK mklabel msdos
-            parted -s --align optimal $DISK mkpart primary 0% 512M
-            parted -s --align optimal $DISK mkpart primary 1G 3G
-            parted -s --align optimal $DISK mkpart primary 3G 100%
+            parted -s --align optimal $DISK mkpart primary 1M 513M
+            parted -s --align optimal $DISK mkpart primary 513M 4G
+            parted -s --align optimal $DISK mkpart primary 4G 100%
         fi
     else
         print "Çıkış Yapıldı."
@@ -253,14 +266,24 @@ part_disk(){
 }
 
 format_disk(){
-    mkfs.fat -F32 "$DISK"1
+    if [[ -d /sys/firmware/efi/efivars ]]; then
+        print "UEFI Boot Oluşturuluyor $DISK"
+        echo y | mkfs.ext4 "$DISK"3
+        mount "$DISK"3 /mnt
+        mkfs.fat -F 32 "$DISK"1
+        mkdir -p /mnt/boot/
+        mount "$DISK"1 /mnt/boot
+    else
+        print "BIOS&MBR Bölüm Oluşturuluyor.."
+        echo y | mkfs.ext4 "$DISK"3
+        mount "$DISK"3 /mnt
+        mkfs.fat -F32 "$DISK"1
+        mkdir -p /mnt/boot
+        mount "$DISK"1 /mnt/boot
+    fi
+    echo -e "$R Diskler Sisteme Yerleştiriliyor.          $reset"
     mkswap "$DISK"2
     swapon "$DISK"2
-    echo y | mkfs.ext4 "$DISK"3
-    echo -e "$R Diskler Sisteme Yerleştiriliyor.          $reset"
-    mount "$DISK"3 /mnt
-    mkdir -p /mnt/boot
-    mount "$DISK"1 /mnt/boot
     lsblk
     print "5 Saniye Bekleyin"
     sleep 5
@@ -280,7 +303,7 @@ network_selector || error "Bir şeyler ters gitti, belki scriptten, belki de sen
 
 # Pacstrap (setting up a base sytem onto the new root).
 print "Temel sistemin kurulması (biraz zaman alabilir)."
-pacstrap /mnt --needed base base-devel $kernel $microcode linux-headers linux-firmware grub rsync efibootmgr reflector man vim nano git >/dev/null
+pacstrap /mnt --needed base base-devel $kernel $microcode linux-headers linux-firmware grub rsync efibootmgr reflector man vim nano git sudo
 
 hostname_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
 
@@ -306,32 +329,20 @@ EOF
 # Configuring the system.
 arch-chroot /mnt /bin/bash -e <<EOF
 
-    # Setting up timezone.
-    echo "Setting up the timezone."
-    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime &>/dev/null
-
-    # Setting up clock.
-    echo "Setting up the system clock."
-    hwclock --systohc
-
-    # Generating locales.
-    echo "Generating locales."
-    locale-gen &>/dev/null
-
     # Generating a new initramfs.
     echo "Creating a new initramfs."
     rm -rf /etc/mkinitcpio.d/linux.preset
-    pacman -S linux linux-firmware linux-headers --noconfirm
-    mkinitcpio -p linux &>/dev/null
+    pacman -S linux linux-firmware linux-headers grub efibootmgr --noconfirm
+    mkinitcpio -p linux
 
     # Installing GRUB.
     echo "Installing GRUB on /boot."
     # Installing grub
 if [[ -d /sys/firmware/efi/efivars ]]; then
     echo "+-----------------------------+"
-    echo "+ UEFI Sistem Algılandı             +"
+    echo "+ UEFI Sistem Algılandı              +"
     echo "+-----------------------------+"
-    grub-install --target=x86_64-efi --efi-directory=/boot/EFI --bootloader-id=GRUB --removable --recheck --debug
+    grub-install --target=x86_64-efi --efi-directory=/boot/ --bootloader-id=GRUB --recheck
 else
     echo "+-----------------------------+"
     echo "+ BIOS-MBR Sistem Algılandı             +"
@@ -343,21 +354,23 @@ else
     echo "+-----------------------------+"
     echo "GRUB_DISABLE_OS_PROBER=true" > /etc/default/grub
 fi
+
 grub-mkconfig -o /boot/grub/grub.cfg
 
+
+echo "$username adlı kullanıcıya yetki veriliyor"
+useradd -m -g users -G optical,storage,wheel,video,audio,users,power,network,log -s /bin/bash "$username"
+usermod -aG wheel $username
+echo "$username şifresi ayarlanıyor"
+echo "$username:$userpass" | chpasswd
+echo "${username} ALL=(ALL:ALL) ALL" >> /etc/sudoers
+echo "%wheel	ALL=(ALL:ALL) ALL" >> /etc/sudoers
+echo "%wheel	ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 EOF
 
 print "Root Şifreniz Ayarlanıyor."
 echo "root:$rootpass" | arch-chroot /mnt chpasswd
 
-print " $username yetkilendiriliyor"
-if [ -n "$username" ]; then
-    print " $username kullanıcıya yetki veriliyor"
-    arch-chroot /mnt useradd -m -g users -G optical,storage,wheel,video,audio,users,power,network,log -s /bin/bash "$username"
-    sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' /mnt/etc/sudoers
-    print "$username şifresi ayarlanıyor"
-    echo "$username:$userpass" | arch-chroot /mnt chpasswd
-fi
 
 # Pacman eye-candy features.
 print "Pacman'da renk, animasyon ve paralel indirme etkinleştiriliyor."
