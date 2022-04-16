@@ -9,11 +9,34 @@ cd archyukle
 chmod +x *.sh
 ./fulloto.sh
 ```
+
 Kurulum tamamlandıktan sonra :
+
 ```bash
 ./paketyukle.sh pkglist.txt
 ```
-pkglist dosyasını kendinize göre düzenlemeyi unutmayın.  Mutlaka blog yazımı okuyunuz.
+
+```diff
++ Pkglist dosyasını kendinize göre düzenlemeyi unutmayın. Mutlaka blog yazımı okuyunuz.
+```
+
+## Refind Bootloader
+
+Grub Yerine Refind Kurmak istiyorsanız
+
+```bash
+pacman -Sy git
+git clone https://github.com/yuceltoluyag/archyukle.git
+cd archyukle
+chmod +x *.sh
+./refind.sh
+```
+
+```diff
+- Refind sadece uefi sistemleri destekler.
+```
+
+![Refind](refind.png "The rEFInd Boot Manager")
 
 # 2 Yıl Sonra gelen Güncelleme
 
@@ -37,7 +60,7 @@ Virtualboxun uefi diski yerleştirmeme sorunu çözümü
 - Sanal Makinenizi Başlatın.
 - Karşınıza gelen ekrana şu komutları yazın :
 
-```
+```bash
 
     fs0: edit startup.nsh
     \EFI\arch_grub\grubx64.efi
