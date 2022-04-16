@@ -2,6 +2,8 @@
 
 Merhaba ! kolay arch linux kurulumu ile kurulum otomatik olarak tamamlanacaktır **Test**. Aşamasındandır geliştirmeye devam ediyorum.
 
+[![VIDEO](https://i.ytimg.com/vi/wqs69m9ZDjo/hqdefault.jpg)](https://youtu.be/wqs69m9ZDjo)
+
 ```bash
 pacman -Sy git
 git clone https://github.com/yuceltoluyag/archyukle.git
@@ -37,10 +39,6 @@ chmod +x *.sh
 ```
 
 ![Refind](refind.png "The rEFInd Boot Manager")
-
-
-
-[![VIDEO](https://i.ytimg.com/vi/wqs69m9ZDjo/hqdefault.jpg)](https://youtu.be/wqs69m9ZDjo)
 
 
 # 2 Yıl Sonra gelen Güncelleme
