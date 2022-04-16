@@ -328,15 +328,24 @@ EOF
 
 # Configuring the system.
 arch-chroot /mnt /bin/bash -e <<EOF
+    
+    echo "Saat Ayarlanıyor."
+    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
+    
+    echo "Sistem Saati Senkronize Ediliyor."
+    hwclock --systohc
+    
+    echo "Dil Dosyaları oluşturuluyor."
+     locale-gen
 
     # Generating a new initramfs.
-    echo "Creating a new initramfs."
+    echo "Yeni  initramfs oluşturuluyor..."
     rm -rf /etc/mkinitcpio.d/linux.preset
     pacman -S linux linux-firmware linux-headers grub efibootmgr --noconfirm
     mkinitcpio -p linux
 
     # Installing GRUB.
-    echo "Installing GRUB on /boot."
+    echo "GRUB Yükleniyor /boot."
     # Installing grub
 if [[ -d /sys/firmware/efi/efivars ]]; then
     echo "+-----------------------------+"
