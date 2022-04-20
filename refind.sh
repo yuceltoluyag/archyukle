@@ -334,6 +334,7 @@ arch-chroot /mnt /bin/bash -e <<EOF
 
     echo "Sistem Saati Senkronize Ediliyor."
     hwclock --systohc
+    timedatectl set-ntp true
 
     echo "Dil Dosyaları oluşturuluyor."
     locale-gen
@@ -383,7 +384,7 @@ menuentry "Arch Linux" {
 EOF
 
 # Setting up pacman hooks.
-print "Refind Hook Sisteme Ekleniyor."
+print " /boot  Yedeklenmesi Otomotikleştiriliyor"
 mkdir /mnt/etc/pacman.d/hooks
 cat > /mnt/etc/pacman.d/hooks/50-bootbackup.hook <<EOF
 [Trigger]
@@ -398,7 +399,10 @@ Depends = rsync
 Description = Backing up /boot...
 When = PostTransaction
 Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
+EOF
 
+print "Refind Güncelleme İşlemleri Otomatikleştiriliyor"
+cat > /mnt/etc/pacman.d/hooks/refind.hook <<EOF
 [Trigger]
 Operation=Upgrade
 Type=Package
@@ -409,6 +413,7 @@ Description = Updating rEFInd on ESP
 When=PostTransaction
 Exec=/usr/bin/refind-install
 EOF
+
 
 
 
