@@ -41,6 +41,30 @@ chmod +x *.sh
 ![Refind](refind.png "The rEFInd Boot Manager")
 
 
+# Baba.log
+Bu projedeki tüm önemli değişiklikler bu dosyada belgelenecektir.
+
+### Fixed
+ 
+## [0.0.2] - 09-04-2022
+  
+0.0.2 güncellemesiyle birlikte tüm sorunlar giderilmiştir. 
+ 
+### Özellik
+* [Uefi Desteği](https://github.com/yuceltoluyag/archyukle/blob/master/fulloto.sh#L245)
+* [Refind](https://github.com/yuceltoluyag/archyukle/blob/master/refind.sh) 
+* [Terminal fontu](https://github.com/yuceltoluyag/archyukle/blob/master/fulloto.sh#L5) daha büyük hale getirildi
+* Bazı paketler eklendi, unutmayın [pklist.txt](https://github.com/yuceltoluyag/archyukle/blob/master/pkglist.txt) kendinize göre özelleştirmelisiniz.
+5. Otomatik ekran kartı tespit edicisi ekledim ama bazı sistemlerde eski tip sürücüler olduğu için aktifleştirmedim.  Onada bir çözüm bulacağım :)  [Ekran Kartı Tespit](https://github.com/yuceltoluyag/archyukle/blob/96db8592d840f0ad4c0cfcc709952602f377f52b/paketyukle.sh#L103)
+ 
+ 
+### Fixed
+ * Sudoers Problemi Giderildi [sudoers dosyası düzenlenmiyor  #1](https://github.com/yuceltoluyag/archyukle/issues/1)
+ * Refind için oluştulan hook dosyaları düzeltiltidi [pacman hooku düzelt](https://github.com/yuceltoluyag/archyukle/issues/4)
+ 
+
+
+
 # 2 Yıl Sonra gelen Güncelleme
 
 Detaylar Muhteşem Blogumda :D [Kalitenin Bir Numaralı Adresine Hoşgeldiniz](https://yuceltoluyag.github.io/) 😅 😂 🤣
