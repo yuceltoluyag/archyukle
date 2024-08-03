@@ -5,6 +5,12 @@ clear
 setfont LatArCyrHeb-19.psfu.gz
 #LOG_FILE="arcbaba.log"
 
+# ANSI color codes
+R=$(tput setaf 1)
+G=$(tput setaf 2)
+B=$(tput setaf 4)
+reset=$(tput sgr0)
+
 print () {
     echo -e "\e[1m\e[93m[ \e[92m•\e[93m ] \e[4m$1\e[0m"
 }
@@ -12,10 +18,8 @@ error() { printf "%s\n" "$1"; exit 1; }
 print "Doğru Disk Adını Seçebilmeniz için Sistemdeki Aygıtlarınız Gösterilecek"
 lsblk
 sleep 5
+
 # Pretty print (function).
-
-
-# Source variables
 logo(){
     echo -e "${R}
                      		      /\\
@@ -31,46 +35,48 @@ logo(){
     select ENTRY in $(lsblk -dpnoNAME|grep -P "/dev/sd|nvme|vd");
     do
         DISK=$ENTRY
-        print "Arch Linux'un Kurulacağı Disk:  $DISK."
+        print "Arch Linux'un Kurulacağı Disk: $DISK."
         break
     done
 }
 
-
-
 internet_check(){
     ### check internet availability
     print "İnternet Bağlantınız Kontrol Ediliyor...\n"
-    if ! curl -Ism 5 https://www.google.com ; then
-        print "İnternet Bağlantınız Başarız Oldu\n"
-        exit
+    if ! curl -Ism 5 https://www.google.com; then
+        print "İnternet Bağlantınız Başarısız Oldu\n"
+        exit 1
     fi
 }
 
-# Sanallaştırma detected...
+# Sanallaştırma tespiti...
 virt_check () {
     hypervisor=$(systemd-detect-virt)
     case $hypervisor in
-        kvm )   print "KVM  Kullandığınız Tespit Edildi."
+        kvm )   
+            print "KVM Kullandığınız Tespit Edildi."
             print "Gerekli Paketler Otomatik Yüklenecek..."
             pacstrap /mnt qemu-guest-agent
             print "Paketler Etkinleştiriliyor.."
             systemctl enable qemu-guest-agent --root=/mnt
         ;;
-        vmware  )   print "VMWare Workstation Kullandığınız Tespit Edildi."
+        vmware )   
+            print "VMWare Workstation Kullandığınız Tespit Edildi."
             print "Gerekli Paketler Otomatik Yüklenecek..."
             pacstrap /mnt open-vm-tools
             print "Paketler Etkinleştiriliyor.."
             systemctl enable vmtoolsd --root=/mnt
             systemctl enable vmware-vmblock-fuse --root=/mnt
         ;;
-        oracle )    print "VirtualBox Kullandığınız Tespit Edildi."
+        oracle )    
+            print "VirtualBox Kullandığınız Tespit Edildi."
             print "Gerekli Paketler Otomatik Yüklenecek..."
             pacstrap /mnt virtualbox-guest-utils
             print "Paketler Etkinleştiriliyor.."
             systemctl enable vboxservice --root=/mnt
         ;;
-        microsoft ) print "Hyper-V  Kullandığınız Tespit Edildi."
+        microsoft ) 
+            print "Hyper-V Kullandığınız Tespit Edildi."
             print "Gerekli Paketler Otomatik Yüklenecek..."
             pacstrap /mnt hyperv
             print "Paketler Etkinleştiriliyor.."
@@ -81,7 +87,6 @@ virt_check () {
         * ) ;;
     esac
 }
-
 
 # Selecting a kernel to install (function).
 kernel_selector () {
@@ -100,7 +105,8 @@ kernel_selector () {
         ;;
         4 ) kernel="linux-zen"
         ;;
-        * ) print "Geçerli bir seçim girmediniz."
+        * ) 
+            print "Geçerli bir seçim girmediniz."
             kernel_selector
     esac
 }
@@ -115,29 +121,34 @@ network_selector () {
     print "5) Bunu daha sonra yapacağım (yalnızca ileri düzey kullanıcılar)"
     read -r -p "Yüklemek istediğiniz ağ yardımcısının numarasını girin: " choice
     case $choice in
-        1 ) print "IWD Yükleniyor"
+        1 ) 
+            print "IWD Yükleniyor"
             pacstrap /mnt iwd
             print "IWD Etkinleştiriliyor."
             systemctl enable iwd --root=/mnt
         ;;
-        2 ) print "NetworkManager Yükleniyor."
+        2 ) 
+            print "NetworkManager Yükleniyor."
             pacstrap /mnt networkmanager
             print "NetworkManager Etkinleştiriliyor."
             systemctl enable NetworkManager --root=/mnt
         ;;
-        3 ) print "Yükleniyor wpa_supplicant and dhcpcd."
+        3 ) 
+            print "Yükleniyor wpa_supplicant ve dhcpcd."
             pacstrap /mnt wpa_supplicant dhcpcd
             print "wpa_supplicant ve dhcpcd Etkinleştiriliyor."
             systemctl enable wpa_supplicant --root=/mnt
             systemctl enable dhcpcd --root=/mnt
         ;;
-        4 ) print "dhcpcd Yükleniyor ."
+        4 ) 
+            print "dhcpcd Yükleniyor."
             pacstrap /mnt dhcpcd
             print "dhcpcd Etkinleştiriliyor."
             systemctl enable dhcpcd --root=/mnt
         ;;
         5 ) ;;
-        * ) print "Geçerli bir seçim yapmadınız."
+        * ) 
+            print "Geçerli bir seçim yapmadınız."
             network_selector
     esac
 }
@@ -145,11 +156,11 @@ network_selector () {
 # Setting up a password for the user account (function).
 userpass_selector () {
     while true; do
-        read -r -s -p "$username için bir kullanıcı şifre belirleyin : " userpass
+        read -r -s -p "$username için bir kullanıcı şifre belirleyin: " userpass
         while [ -z "$userpass" ]; do
             echo
             print "$username için bir şifre girmeniz gerekiyor."
-            read -r -s -p "$username için bir kullanıcı şifre belirleyin : " userpass
+            read -r -s -p "$username için bir kullanıcı şifre belirleyin: " userpass
             [ -n "$userpass" ] && break
         done
         echo
@@ -158,17 +169,7 @@ userpass_selector () {
         [ "$userpass" = "$userpass2" ] && break
         echo "Şifreler eşleşmiyor, tekrar deneyin."
     done
-    # if [[ ! -d /etc/sudoers.d ]]; then
-    #     print "Sudo kurulu değil Sanki Amdin Kardeş. '/etc/sudoers.d' dizini Oluştursak mı ?."
-    # fi
-    # print " $username kullanıcıya yetki veriliyor"
-    # arch-chroot /mnt useradd -m -g users -G optical,storage,wheel,video,audio,users,power,network,log -s /bin/bash "$username"
-    # sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' /mnt/etc/sudoers
-    # print "$username şifresi ayarlanıyor"
-    # echo "$username:$userpass" | arch-chroot /mnt chpasswd
 }
-
-
 
 # Setting up a password for the root account (function).
 rootpass_selector () {
@@ -187,7 +188,6 @@ rootpass_selector () {
         echo "Şifreler eşleşmiyor, tekrar deneyin."
     done
 }
-
 
 # Microcode detector (function).
 microcode_detector () {
@@ -211,10 +211,9 @@ hostname_selector () {
     echo "$hostname" > /mnt/etc/hostname
 }
 
-
 # Setting up the locale (function).
 locale_selector () {
-    read -r -p "Lütfen kullandığınız yerel ayarı girin (biçim: xx_XX ,örneğin tr_TR veya en_US kullanmak için boş girin): " locale
+    read -r -p "Lütfen kullandığınız yerel ayarı girin (biçim: xx_XX, örneğin tr_TR veya en_US kullanmak için boş girin): " locale
     if [ -z "$locale" ]; then
         print "en_US varsayılan yerel ayar olarak kullanılacaktır."
         locale="en_US"
@@ -222,7 +221,6 @@ locale_selector () {
     echo "$locale.UTF-8 UTF-8"  > /mnt/etc/locale.gen
     echo "LANG=$locale.UTF-8" > /mnt/etc/locale.conf
 }
-
 
 # Setting up the keyboard layout (function).
 keyboard_selector () {
@@ -233,7 +231,6 @@ keyboard_selector () {
     fi
     echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
 }
-
 
 part_disk(){
     # Deleting old partition scheme.
@@ -247,17 +244,17 @@ part_disk(){
             print "Siliniyor $DISK."
             wipefs -af "$DISK"
             sgdisk -Zo "$DISK"
-            parted -s --align optimal $DISK mklabel gpt
-            parted -s --align optimal $DISK mkpart ESP fat32 1M 513M
-            parted -s --align optimal $DISK set 1 esp on
-            parted -s --align optimal $DISK mkpart primary  linux-swap 513M 4G
-            parted -s --align optimal $DISK mkpart primary  4G 100%
+            parted -s --align optimal "$DISK" mklabel gpt
+            parted -s --align optimal "$DISK" mkpart ESP fat32 1M 513M
+            parted -s --align optimal "$DISK" set 1 esp on
+            parted -s --align optimal "$DISK" mkpart primary  linux-swap 513M 4G
+            parted -s --align optimal "$DISK" mkpart primary  4G 100%
         else
             print "$DISK MBR&BIOS Sisteme Göre Biçimlendiriliyor"
-            parted -s --align optimal $DISK mklabel msdos
-            parted -s --align optimal $DISK mkpart primary 1M 513M
-            parted -s --align optimal $DISK mkpart primary 513M 4G
-            parted -s --align optimal $DISK mkpart primary 4G 100%
+            parted -s --align optimal "$DISK" mklabel msdos
+            parted -s --align optimal "$DISK" mkpart primary 1M 513M
+            parted -s --align optimal "$DISK" mkpart primary 513M 4G
+            parted -s --align optimal "$DISK" mkpart primary 4G 100%
         fi
     else
         print "Çıkış Yapıldı."
@@ -268,27 +265,26 @@ part_disk(){
 format_disk(){
     if [[ -d /sys/firmware/efi/efivars ]]; then
         print "UEFI Boot Oluşturuluyor $DISK"
-        echo y | mkfs.ext4 "$DISK"3
-        mount "$DISK"3 /mnt
-        mkfs.fat -F 32 "$DISK"1
+        echo y | mkfs.ext4 "${DISK}3"
+        mount "${DISK}3" /mnt
+        mkfs.fat -F 32 "${DISK}1"
         mkdir -p /mnt/boot/
-        mount "$DISK"1 /mnt/boot
+        mount "${DISK}1" /mnt/boot
     else
         print "BIOS&MBR Bölüm Oluşturuluyor.."
-        echo y | mkfs.ext4 "$DISK"3
-        mount "$DISK"3 /mnt
-        mkfs.fat -F32 "$DISK"1
+        echo y | mkfs.ext4 "${DISK}3"
+        mount "${DISK}3" /mnt
+        mkfs.fat -F32 "${DISK}1"
         mkdir -p /mnt/boot
-        mount "$DISK"1 /mnt/boot
+        mount "${DISK}1" /mnt/boot
     fi
-    echo -e "$R Diskler Sisteme Yerleştiriliyor.          $reset"
-    mkswap "$DISK"2
-    swapon "$DISK"2
+    echo -e "${R}Diskler Sisteme Yerleştiriliyor.${reset}"
+    mkswap "${DISK}2"
+    swapon "${DISK}2"
     lsblk
     print "5 Saniye Bekleyin"
     sleep 5
 }
-
 
 # Workstation
 
@@ -301,9 +297,9 @@ microcode_detector || error "Bir şeyler ters gitti, belki scriptten, belki de s
 virt_check || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
 network_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
 
-# Pacstrap (setting up a base sytem onto the new root).
+# Pacstrap (setting up a base system onto the new root).
 print "Temel sistemin kurulması (biraz zaman alabilir)."
-pacstrap /mnt --needed base base-devel $kernel $microcode linux-headers linux-firmware refind rsync reflector man vim nano git sudo
+pacstrap /mnt --needed base base-devel "$kernel" "$microcode" linux-headers linux-firmware refind rsync reflector man vim nano git sudo
 
 hostname_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
 
@@ -317,7 +313,6 @@ rootpass_selector || error "Bir şeyler ters gitti, belki scriptten, belki de se
 locale_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
 keyboard_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
 
-
 print "Host Dosyanız Ayarlanıyor."
 cat > /mnt/etc/hosts <<EOF
 127.0.0.1   localhost
@@ -325,16 +320,14 @@ cat > /mnt/etc/hosts <<EOF
 127.0.1.1   $hostname.localdomain   $hostname
 EOF
 
-
 # Configuring the system.
 arch-chroot /mnt /bin/bash -e <<EOF
 
     echo "Saat Ayarlanıyor."
-    ln -sf /usr/share/zoneinfo/Europe/Istanbul  /etc/localtime
+    ln -sf /usr/share/zoneinfo/Europe/Istanbul /etc/localtime
 
     echo "Sistem Saati Senkronize Ediliyor."
     hwclock --systohc
-
 
     echo "Dil Dosyaları oluşturuluyor."
     locale-gen
@@ -346,12 +339,12 @@ arch-chroot /mnt /bin/bash -e <<EOF
     mkinitcpio -p linux
 
     # rEFInd installation.
-    echo "rEFInd. Yükleniyor"
+    echo "rEFInd Yükleniyor."
     refind-install
 
 echo "$username adlı kullanıcıya yetki veriliyor"
 useradd -m -g users -G optical,storage,wheel,video,audio,users,power,network,log -s /bin/bash "$username"
-usermod -aG wheel $username
+usermod -aG wheel "$username"
 echo "$username şifresi ayarlanıyor"
 echo "$username:$userpass" | chpasswd
 echo "${username} ALL=(ALL:ALL) ALL" >> /etc/sudoers
@@ -364,7 +357,7 @@ echo "root:$rootpass" | arch-chroot /mnt chpasswd
 
 # Setting up rEFInd.
 print "REFInd Boot dosyası ayarlanıyor"
-UUID=$(blkid -s PARTUUID -o value "$DISK"3)
+UUID=$(blkid -s PARTUUID -o value "${DISK}3")
 rm -rf /mnt/boot/refind_linux.conf
 cat > /mnt/boot/EFI/refind/refind.conf <<EOF
 timeout 20
@@ -376,7 +369,7 @@ menuentry "Arch Linux" {
 	volume   "Arch Linux"
 	loader   /vmlinuz-$kernel
 	initrd   /initramfs-$kernel.img
-	options  "root=PARTUUID=$UUID rw add_efi_memmap quiet initrd=\\$microcode.img initrd=\initramfs-$kernel.img"
+	options  "root=PARTUUID=$UUID rw add_efi_memmap quiet initrd=\\$microcode.img initrd=\\initramfs-$kernel.img"
 	submenuentry "Boot to terminal (rescue mode)" {
 	    add_options "systemd.unit=multi-user.target"
 	}
@@ -384,7 +377,7 @@ menuentry "Arch Linux" {
 EOF
 
 # Setting up pacman hooks.
-print " /boot  Yedeklenmesi Otomotikleştiriliyor"
+print " /boot Yedeklenmesi Otomatikleştiriliyor"
 mkdir /mnt/etc/pacman.d/hooks
 cat > /mnt/etc/pacman.d/hooks/50-bootbackup.hook <<EOF
 [Trigger]
@@ -404,23 +397,20 @@ EOF
 print "Refind Güncelleme İşlemleri Otomatikleştiriliyor"
 cat > /mnt/etc/pacman.d/hooks/refind.hook <<EOF
 [Trigger]
-Operation=Upgrade
-Type=Package
-Target=refind
+Operation = Upgrade
+Type = Package
+Target = refind
 
 [Action]
 Description = Updating rEFInd on ESP
-When=PostTransaction
+When = PostTransaction
 Exec=/usr/bin/refind-install
 EOF
-
-
-
 
 # Pacman eye-candy features.
 print "Pacman'da renk, animasyon ve paralel indirme etkinleştiriliyor."
 sed -i 's/#Color/Color\nILoveCandy/;s/^#ParallelDownloads.*$/ParallelDownloads = 10/' /mnt/etc/pacman.conf
 
 # Finishing up.
-print "Bitti, şimdi yeniden yeniden başlatabilirsiniz (kullanıcı adı ve şifre girdikten sonra paketleri yüklemeyi unutmayın.)."
+print "Bitti, şimdi yeniden başlatabilirsiniz (kullanıcı adı ve şifre girdikten sonra paketleri yüklemeyi unutmayın.)."
 exit
