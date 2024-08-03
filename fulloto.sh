@@ -34,8 +34,10 @@ select_disk() {
 
 check_internet() {
     print "İnternet Bağlantınız Kontrol Ediliyor...\n"
-    if ! curl -Ism 5 https://www.google.com; then
-        error "İnternet Bağlantınız Başarız Oldu\n"
+    if ! curl -s --head --request GET https://www.google.com | grep "200 OK" > /dev/null; then
+        error "İnternet Bağlantınız Başarısız Oldu\n"
+    else
+        print "İnternet Bağlantısı Başarılı.\n"
     fi
 }
 
@@ -238,12 +240,11 @@ format_disk() {
 }
 
 check_disk_format() {
-    local disk=$1
     if mount | grep -q "/mnt"; then
         print "Disk zaten biçimlendirilmiş ve monte edilmiş, bu adımlar atlanacak."
-        return 1
-    else
         return 0
+    else
+        return 1
     fi
 }
 
@@ -254,7 +255,7 @@ run_arch_chroot() {
     locale-gen
     mkinitcpio -P
 
-    if [[ -d /sys/firmware/efi/efivars ]]; then
+    if [ -d /sys/firmware/efi/efivars ]; then
         grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
     else
         grub-install --target=i386-pc $DISK --recheck --debug
@@ -274,7 +275,7 @@ main() {
     check_internet
     select_disk
     
-    if check_disk_format "$DISK"; then
+    if ! check_disk_format; then
         partition_disk "$DISK"
         format_disk "$DISK"
     fi
