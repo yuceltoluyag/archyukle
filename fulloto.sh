@@ -129,7 +129,6 @@ select_network() {
 }
 
 
-# Kullanıcıyı oluşturma ve şifre belirleme
 set_user_and_password() {
     local user=$1
     local pass
@@ -137,8 +136,10 @@ set_user_and_password() {
     local retry_limit=3
     local attempts=0
 
-    # Kullanıcıyı oluştur
-    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$user"
+    if [ "$user" != "root" ]; then
+        # Kullanıcıyı oluştur
+        arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$user"
+    fi
 
     while true; do
         read -r -s -p "$user için bir şifre belirleyin: " pass
