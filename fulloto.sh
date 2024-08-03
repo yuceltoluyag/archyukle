@@ -259,15 +259,6 @@ check_disk_format() {
     fi
 }
 
-check_disk_format() {
-    if mount | grep -q "/mnt"; then
-        print "Disk zaten biçimlendirilmiş ve monte edilmiş, bu adımlar atlanacak."
-        return 0
-    else
-        return 1
-    fi
-}
-
 mount_existing_partitions() {
     local disk=$1
     print "Mevcut bölümler monte ediliyor: $disk."
@@ -278,6 +269,7 @@ mount_existing_partitions() {
 }
 
 run_arch_chroot() {
+    local disk=$1
     arch-chroot /mnt /bin/bash -e <<EOF
     ln -sf /usr/share/zoneinfo/\$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
     hwclock --systohc
@@ -287,17 +279,18 @@ run_arch_chroot() {
     if [ -d /sys/firmware/efi/efivars ]; then
         grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
     else
-        grub-install --target=i386-pc $DISK --recheck --debug
+        grub-install --target=i386-pc $disk --recheck --debug
         echo "GRUB_DISABLE_OS_PROBER=true" > /etc/default/grub
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
 
     useradd -m -g users -G wheel -s /bin/bash "$username"
     echo "${username} ALL=(ALL:ALL) ALL" >> /etc/sudoers
-    echo "%wheel	ALL=(ALL:ALL) ALL" >> /etc/sudoers
-    echo "%wheel	ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+    echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers
+    echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 EOF
 }
+
 
 main() {
     show_logo
@@ -330,7 +323,7 @@ main() {
     set_user_and_password "$username"
     set_user_and_password "root"
 
-    run_arch_chroot
+    run_arch_chroot "$DISK"
 
     print "Pacman'da renk, animasyon ve paralel indirme etkinleştiriliyor."
     sed -i 's/#Color/Color\nILoveCandy/;s/^#ParallelDownloads.*$/ParallelDownloads = 10/' /mnt/etc/pacman.conf
