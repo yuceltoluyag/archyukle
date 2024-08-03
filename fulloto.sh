@@ -67,13 +67,13 @@ detect_virtualization() {
 install_package() {
     local package=$1
     print "Gerekli Paketler Yükleniyor: $package..."
-    pacstrap /mnt $package
+    pacstrap /mnt "$package"
 }
 
 enable_service() {
     local service=$1
     print "Paket Etkinleştiriliyor: $service..."
-    systemctl enable $service --root=/mnt
+    systemctl enable "$service" --root=/mnt
 }
 
 select_kernel() {
@@ -146,7 +146,8 @@ set_password() {
 }
 
 detect_microcode() {
-    local cpu=$(grep vendor_id /proc/cpuinfo)
+    local cpu
+    cpu=$(grep vendor_id /proc/cpuinfo)
     if [[ $cpu == *"AuthenticAMD"* ]]; then
         print "Bir AMD CPU algılandı, AMD mikro kodu yüklenecek."
         microcode="amd-ucode"
@@ -191,16 +192,16 @@ partition_disk() {
         wipefs -af "$disk"
         sgdisk -Zo "$disk"
         if [ -d /sys/firmware/efi/efivars ]; then
-            parted -s --align optimal $disk mklabel gpt
-            parted -s --align optimal $disk mkpart ESP fat32 1M 513M
-            parted -s --align optimal $disk set 1 esp on
-            parted -s --align optimal $disk mkpart primary linux-swap 513M 4G
-            parted -s --align optimal $disk mkpart primary 4G 100%
+            parted -s --align optimal "$disk" mklabel gpt
+            parted -s --align optimal "$disk" mkpart ESP fat32 1M 513M
+            parted -s --align optimal "$disk" set 1 esp on
+            parted -s --align optimal "$disk" mkpart primary linux-swap 513M 4G
+            parted -s --align optimal "$disk" mkpart primary 4G 100%
         else
-            parted -s --align optimal $disk mklabel msdos
-            parted -s --align optimal $disk mkpart primary 1M 513M
-            parted -s --align optimal $disk mkpart primary 513M 4G
-            parted -s --align optimal $disk mkpart primary 4G 100%
+            parted -s --align optimal "$disk" mklabel msdos
+            parted -s --align optimal "$disk" mkpart primary 1M 513M
+            parted -s --align optimal "$disk" mkpart primary 513M 4G
+            parted -s --align optimal "$disk" mkpart primary 4G 100%
         fi
     else
         error "Disk bölme işlemi iptal edildi."
@@ -260,7 +261,7 @@ main() {
     select_network
 
     print "Temel sistem kuruluyor (biraz zaman alabilir)."
-    pacstrap /mnt --needed base base-devel $kernel $microcode linux-headers linux-firmware grub rsync efibootmgr reflector man vim nano git sudo
+    pacstrap /mnt --needed base base-devel "$kernel" "$microcode" linux-headers linux-firmware grub rsync efibootmgr reflector man vim nano git sudo
 
     set_hostname
     set_locale
