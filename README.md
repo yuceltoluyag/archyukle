@@ -1,5 +1,3 @@
----
-
 
 # Kolay Arch Linux Kurulumu: **archyukle**
 
@@ -37,10 +35,7 @@ Bu script, Arch Linux kurulumunu kolaylaştırmak için tasarlanmıştır ve aş
 11. **Pacman Konfigürasyonu**: Pacman paket yöneticisinde renk, animasyon ve paralel indirme özelliklerini etkinleştirir.
 12. **Pacman Hooks**: /boot yedeklemesi ve rEFInd güncellemelerini otomatikleştirir.
 
-
-[![Click to Watch the Video](youtube.webp)](https://youtu.be/wqs69m9ZDjo "Easy Arch Linux Installer Bash Script")
-
-
+[![Click to Watch the Video](https://raw.githubusercontent.com/yuceltoluyag/archyukle/main/youtube.webp)](https://youtu.be/wqs69m9ZDjo "Easy Arch Linux Installer Bash Script")
 
 ## Kurulum Adımları
 
@@ -129,10 +124,11 @@ VirtualBox'un UEFI diski yerleştirmeme sorunu çözümü:
 
 ```bash
 fs0: edit startup.nsh
-\EFI\arch_grub\grubx64.efi
+\EFIrch_grub\grubx64.efi
 ctrl-s <basın>
 <enter>
 ctrl-q <basın>
 reset
 ```
 
+Bu düzenlemelerle README dosyanız daha bilgilendirici, kullanıcı dostu ve kolay gezilebilir hale gelecektir.
