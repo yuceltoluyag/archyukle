@@ -128,12 +128,17 @@ select_network() {
     esac
 }
 
-set_password() {
+
+# Kullanıcıyı oluşturma ve şifre belirleme
+set_user_and_password() {
     local user=$1
     local pass
     local pass_confirm
     local retry_limit=3
     local attempts=0
+
+    # Kullanıcıyı oluştur
+    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$user"
 
     while true; do
         read -r -s -p "$user için bir şifre belirleyin: " pass
@@ -156,6 +161,7 @@ set_password() {
         fi
     done
 }
+
 
 detect_microcode() {
     local cpu
@@ -296,8 +302,8 @@ main() {
     genfstab -U /mnt >> /mnt/etc/fstab
 
     read -r -p "Lütfen bir kullanıcı hesabı için ad girin: " username
-    set_password "$username"
-    set_password "root"
+    set_user_and_password "$username"
+    set_user_and_password "root"
 
     run_arch_chroot
 
