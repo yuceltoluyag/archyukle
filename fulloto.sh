@@ -129,6 +129,7 @@ select_network() {
 }
 
 
+# Kullanıcıyı oluşturma ve şifre belirleme
 set_user_and_password() {
     local user=$1
     local pass
@@ -136,7 +137,8 @@ set_user_and_password() {
     local retry_limit=3
     local attempts=0
 
-    if id -u "$user" >/dev/null 2>&1; then
+    # Kullanıcıyı kontrol et ve varsa sadece şifresini güncelle
+    if arch-chroot /mnt id -u "$user" >/dev/null 2>&1; then
         echo "Kullanıcı $user zaten mevcut. Şifresi güncellenecek."
     else
         # Kullanıcıyı oluştur
