@@ -265,7 +265,12 @@ mount_existing_partitions() {
     mount "${disk}3" /mnt
     mkdir -p /mnt/boot
     mount "${disk}1" /mnt/boot
-    swapon "${disk}2"
+    
+    if ! swapon --show | grep -q "${disk}2"; then
+        swapon "${disk}2"
+    else
+        print "Swap bölümü zaten etkin durumda, atlanıyor."
+    fi
 }
 
 run_arch_chroot() {
