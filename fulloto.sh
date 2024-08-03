@@ -130,6 +130,8 @@ set_password() {
     local user=$1
     local pass
     local pass_confirm
+    local retry_limit=3
+    local attempts=0
 
     while true; do
         read -r -s -p "$user için bir şifre belirleyin: " pass
@@ -137,10 +139,18 @@ set_password() {
         read -r -s -p "Şifreyi tekrar girin: " pass_confirm
         echo
         if [ "$pass" == "$pass_confirm" ]; then
-            echo "$user:$pass" | arch-chroot /mnt chpasswd
-            break
+            if echo "$user:$pass" | arch-chroot /mnt chpasswd; then
+                break
+            else
+                echo "Şifre belirlenirken bir hata oluştu. Tekrar deneyin."
+            fi
         else
             echo "Şifreler eşleşmiyor, tekrar deneyin."
+        fi
+        attempts=$((attempts + 1))
+        if [ "$attempts" -ge "$retry_limit" ]; then
+            echo "Çok fazla başarısız deneme. İşlem iptal ediliyor."
+            exit 1
         fi
     done
 }
