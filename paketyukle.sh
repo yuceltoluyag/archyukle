@@ -5,223 +5,185 @@
 #   $ ./paketyukle.sh <pkglist.txt>
 #
 aurcmd="yay"
-list="$(cat "$1" | grep -oE '^[^(#|[:space:])]*' | sort -u)"
-repo="$(cat <(pacman -Slq) <(pacman -Sgq) | sort -u)"
+list=$(grep -oE '^[^(#|[:space:])]*' "$1" | sort -u)
+repo=$(cat <(pacman -Slq) <(pacman -Sgq) | sort -u)
 packages=$(comm -12 <(echo "$repo") <(echo "$list") | tr '\n' ' ')
 aurpackages=$(comm -13 <(echo "$repo") <(echo "$list") | tr '\n' ' ')
 setfont iso09.16
-checkgit(){
-    which git > /dev/null 2>&1
-    if [ "$?" -eq "0" ]; then
-        echo [✔]::[Git]: Kurulumu Mevcut!;
+
+check_git() {
+    if command -v git > /dev/null 2>&1; then
+        echo "[✔]::[Git]: Kurulumu Mevcut!"
     else
-        
-        echo [x]::[Bilgi]: Sistemde Git Kurulumu Bulunamadı ;
+        echo "[x]::[Bilgi]: Sistemde Git Kurulumu Bulunamadı."
         echo ""
-        echo [!]::[Lütfen Bekleyin]: Git Yükleniyor ..;
+        echo "[!]::[Lütfen Bekleyin]: Git Yükleniyor..."
         sudo pacman -S git --noconfirm
         echo ""
     fi
     sleep 1
 }
 
-checkwget(){
-    which wget > /dev/null 2>&1
-    if [ "$?" -eq "0" ]; then
-        echo [✔]::[wget]: Kurulumu Mevcut!;
+check_wget() {
+    if command -v wget > /dev/null 2>&1; then
+        echo "[✔]::[wget]: Kurulumu Mevcut!"
     else
-        
-        echo [x]::[Bilgi]:Sistemde Wget Kurulumu Bulunamadı ;
+        echo "[x]::[Bilgi]: Sistemde Wget Kurulumu Bulunamadı."
         echo ""
-        echo [!]::[Lütfen Bekleyin]: Wget Yükleniyor ;
+        echo "[!]::[Lütfen Bekleyin]: Wget Yükleniyor..."
         sudo pacman -S --noconfirm wget
-        echo sleep 2
+        sleep 2
         echo ""
     fi
     sleep 1
-    
 }
 
-checkyay(){
-    which yay > /dev/null 2>&1
-    if [ "$?" -eq "0" ]; then
-        echo [✔]::[Yay]: Kuruluma Mevcut!;
+check_yay() {
+    if command -v yay > /dev/null 2>&1; then
+        echo "[✔]::[Yay]: Kuruluma Mevcut!"
     else
-        echo [x]::[uyarı]:bu komut dosyası Yay paket yöneticisini gerektirir ;
+        echo "[x]::[Uyarı]: Bu komut dosyası Yay paket yöneticisini gerektirir."
         rm -rf yay
         echo ""
-        echo [!]::[Lütfen Bekleyin]: Yay Paket Yöneticisi Yükleniyor ..;
+        echo "[!]::[Lütfen Bekleyin]: Yay Paket Yöneticisi Yükleniyor..."
         git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si
         echo ""
     fi
     sleep 1
 }
 
-# ROOT User Check
-# checkroot(){
-#     sleep 1
-#     if [[ $(id -u) = 0 ]]; then
-#         echo -e " ROOT: ${g}PASSED${endc}"
-#     else
-#         echo -e " Root Yetkiniz Yok: ${r}FAILED${endc}
-#         ${y}Bu scriptin çalışabilmesi için Root Yetkisine İhtiyaç Vardır...${endc}"
-#         echo -e " ${b}paketyukle.sh${enda} çıkış yapılıyor"
-#         echo
-#         sleep 1
-#         exit
-#     fi
-# }
-
 # Initial pacman -Syu
-initpacmanupd(){
+init_pacman_update() {
     echo ""
-    echo; echo -e "\033[1m Güncelleme Kontrolleri ..... \e[0m\E[31m| Lütfen güncellemeden önce herhangi bir yükleme işlemi varsa durdurun\e[0m";
-    echo
-    sudo pacman -Syu --noconfirm;
-    echo "Güncelleme Tamamlandı";
-    sleep 1;
+    echo -e "\033[1m Güncelleme Kontrolleri ..... \e[0m\E[31m| Lütfen güncellemeden önce herhangi bir yükleme işlemi varsa durdurun\e[0m"
+    echo ""
+    sudo pacman -Syu --noconfirm
+    echo "Güncelleme Tamamlandı"
+    sleep 1
 }
 
-package_install(){
+package_install() {
     echo "Pacman Paketleri:"
     echo "$packages"
     echo
-    echo "AUR paketleri:"
+    echo "AUR Paketleri:"
     echo "$aurpackages"
     echo
-    
+
     read -rep "Tüm paketleri yüklensin mi? [e/H] " install
     [ "$install" != "${install#[Ee]}" ] || exit 0
-    
-    sudo pacman --noconfirm --needed --ask 4 -S $packages
+
+    sudo pacman --noconfirm --needed --ask 4 -S "$packages"
     for aur in $aurpackages; do
         "$aurcmd" -S --noconfirm "$aur"
     done
-    showresult
+    show_result
 }
 
-graphic_install(){
+graphic_install() {
     printm "Ekran Kartınız Yükleniyor"
     if lspci | grep -E "NVIDIA|GeForce"; then
         printm "Nvidia Kart Tespit Edildi"
         sudo pacman --noconfirm --needed nvidia nvidia-settings
-        elif lspci | grep -E "Radeon"; then
+    elif lspci | grep -E "Radeon"; then
         printm "Radeon Kart Tespit Edildi"
         sudo pacman --noconfirm --needed xf86-video-amdgpu
-        elif lspci | grep -E "Integrated Graphics Controller"; then
+    elif lspci | grep -E "Integrated Graphics Controller"; then
         printm "Entegre Grafik Kartı Tespit Edildi"
         sudo pacman --noconfirm --needed libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-intel-driver libva-utils
     fi
 }
 
-# Enabeling installed services
+# Enabling installed services
 archer_services() {
-    printm 'Yüklü Hizmetleri etkinleştirme (Symlink "hataları" yoksayılabilir)'
-    # Services: network manager
+    printm 'Yüklü Hizmetleri etkinleştiriliyor (Symlink "hataları" yoksayılabilir)'
     if pacman -Q networkmanager; then
         sudo systemctl enable NetworkManager.service
         sudo systemctl enable NetworkManager-wait-online.service
-        
-        elif pacman -Q connman; then
+    elif pacman -Q connman; then
         sudo systemctl enable connman.service
-        
-        elif pacman -Q wicd; then
+    elif pacman -Q wicd; then
         sudo systemctl enable wicd.service
-        
-        elif pacman -Q dhcpcd; then
+    elif pacman -Q dhcpcd; then
         sudo systemctl enable dhcpcd.service
-        
     else
-        eth="$(basename /sys/class/net/en*)"
-        wifi="$(basename /sys/class/net/wl*)"
-        [ -d "/sys/class/net/$eth" ] && \
-        printf "[Match]\nName=%s\n\n[Network]\nDHCP=yes\n\n[DHCP]\nRouteMetric=10" "$eth" \
-        > /etc/systemd/network/20-wired.network
-        [ -d "/sys/class/net/$wifi" ] && \
-        printf "[Match]\nName=%s\n\n[Network]\nDHCP=yes\n\n[DHCP]\nRouteMetric=20" "$wifi" \
-        > /etc/systemd/network/25-wireless.network
+        eth=$(basename /sys/class/net/en*)
+        wifi=$(basename /sys/class/net/wl*)
+        [ -d "/sys/class/net/$eth" ] && printf "[Match]\nName=%s\n\n[Network]\nDHCP=yes\n\n[DHCP]\nRouteMetric=10" "$eth" > /etc/systemd/network/20-wired.network
+        [ -d "/sys/class/net/$wifi" ] && printf "[Match]\nName=%s\n\n[Network]\nDHCP=yes\n\n[DHCP]\nRouteMetric=20" "$wifi" > /etc/systemd/network/25-wireless.network
         sudo systemctl enable systemd-networkd.service
         sudo systemctl enable systemd-networkd-wait-online.service
         sudo systemctl enable systemd-resolved.service
         umount /etc/resolv.conf 2>/dev/null
         ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
     fi
-    
-    # Services: display manager
+
     if pacman -Q lightdm; then
         sudo systemctl enable lightdm.service
-        
-        elif pacman -Q lxdm; then
+    elif pacman -Q lxdm; then
         sudo systemctl enable lxdm.service
-        
-        elif pacman -Q gdm; then
+    elif pacman -Q gdm; then
         sudo systemctl enable gdm.service
-        
-        elif pacman -Q sddm; then
+    elif pacman -Q sddm; then
         sudo systemctl enable sddm.service
-        
-        elif pacman -Q xorg-xdm; then
+    elif pacman -Q xorg-xdm; then
         sudo systemctl enable xdm.service
-        
-        elif pacman -Qs entrance; then
+    elif pacman -Qs entrance; then
         sudo systemctl enable entrance.service
     fi
-    
-    # Services: other
+
     if pacman -Q util-linux; then
         sudo systemctl enable fstrim.timer
     fi
-    
+
     if pacman -Q bluez; then
         sudo systemctl enable bluetooth.service
     fi
-    
+
     if pacman -Q modemmanager; then
         sudo systemctl enable ModemManager.service
     fi
-    
+
     if pacman -Q ufw; then
         sudo systemctl enable ufw.service
     fi
-    
+
     if pacman -Q libvirt; then
         sudo systemctl enable libvirtd.service
     fi
-    
+
     if pacman -Q avahi; then
         sudo systemctl enable avahi-daemon.service
     fi
-    
+
     if pacman -Q cups; then
         sudo systemctl enable cups.service
     fi
-    
+
     if pacman -Q autorandr; then
         sudo systemctl enable autorandr.service
     fi
-    
+
     if pacman -Q auto-cpufreq; then
         sudo systemctl enable auto-cpufreq.service
     fi
-    
+
     if pacman -Q thermald; then
         sudo systemctl enable thermald.service
     fi
-    
+
     if pacman -Q tlp; then
         sudo systemctl enable tlp.service
     fi
-    
-    showresult
+
+    show_result
 }
 
-# Short function to silent command outputs
 _s() { "$@" >/dev/null 2>>err.o || err=true; }
 _e() { "$@" 2>>err.o || err=true; }
 
-# Printing OK/ERROR
-showresult() {
-    if [ "$err" ] ; then
+show_result() {
+    if [ "$err" ]; then
         printf ' \e[1;31m[HATA]\e[m\n'
         cat err.o 2>/dev/null
         printf '\e[1mYükleyiciden çık? [e/H]\e[m\n'
@@ -234,24 +196,25 @@ showresult() {
     unset err
 }
 
-
-
-# Padding
 width=$(($(tput cols)-15))
 padding=$(printf '.%.0s' {1..500})
 printm() {
     printf "%-${width}.${width}s" "$1 $padding"
 }
 
-
-# Script Initiation
 sleep 1
-checkwget && checkyay && checkgit && sleep 1
-initpacmanupd && clear && package_install && sleep 1
+check_wget
+check_yay
+check_git
+sleep 1
+init_pacman_update
+clear
+package_install
+sleep 1
 archer_services
 
 if [ ! -r "$1" ]; then
-    echo "Kullanim ${0##*/} <pkglist.txt>"
+    echo "Kullanım: ${0##*/} <pkglist.txt>"
     exit 1
 fi
 
