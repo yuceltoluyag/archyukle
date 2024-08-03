@@ -291,8 +291,8 @@ run_arch_chroot() {
 
     useradd -m -g users -G wheel -s /bin/bash "$username"
     echo "${username} ALL=(ALL:ALL) ALL" >> /etc/sudoers
-    echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers
-    echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+    echo "%wheel	ALL=(ALL:ALL) ALL" >> /etc/sudoers
+    echo "%wheel	ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 EOF
 }
 
@@ -337,3 +337,4 @@ main() {
 }
 
 main
+
