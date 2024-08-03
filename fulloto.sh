@@ -1,22 +1,17 @@
 #!/usr/bin/env -S bash -e
 
-# Cleaning the TTY.
 clear
 setfont LatArCyrHeb-19.psfu.gz
-#LOG_FILE="arcbaba.log"
 
 print () {
     echo -e "\e[1m\e[93m[ \e[92m•\e[93m ] \e[4m$1\e[0m"
 }
-error() { printf "%s\n" "$1"; exit 1; }
-print "Doğru Disk Adını Seçebilmeniz için Sistemdeki Aygıtlarınız Gösterilecek"
-lsblk
-sleep 5
-# Pretty print (function).
+error() {
+    printf "%s\n" "$1"
+    exit 1
+}
 
-
-# Source variables
-logo(){
+show_logo() {
     echo -e "${R}
                      		      /\\
 				     /  \\    ${G}Yucel Toluyağ${G}
@@ -25,66 +20,63 @@ logo(){
 				  / /    \\ \\
 				 / / _____\\ \\
     				/_/  \`----.\\_\\ ${B}"
-    
     print "Arch Linux kurulum sürecini basitleştirmek için yapılmış bir komut dosyası olan Arcyukle'ye hoş geldiniz."
+}
+
+select_disk() {
     PS3="Lütfen diskin numarasını seçin: "
-    select ENTRY in $(lsblk -dpnoNAME|grep -P "/dev/sd|nvme|vd");
-    do
+    select ENTRY in $(lsblk -dpnoNAME|grep -P "/dev/sd|nvme|vd"); do
         DISK=$ENTRY
-        print "Arch Linux'un Kurulacağı Disk:  $DISK."
+        print "Arch Linux'un Kurulacağı Disk: $DISK."
         break
     done
 }
 
-
-
-internet_check(){
-    ### check internet availability
+check_internet() {
     print "İnternet Bağlantınız Kontrol Ediliyor...\n"
-    if ! curl -Ism 5 https://www.google.com ; then
-        print "İnternet Bağlantınız Başarız Oldu\n"
-        exit
+    if ! curl -Ism 5 https://www.google.com; then
+        error "İnternet Bağlantınız Başarız Oldu\n"
     fi
 }
 
-# Sanallaştırma detected...
-virt_check () {
+detect_virtualization() {
     hypervisor=$(systemd-detect-virt)
     case $hypervisor in
-        kvm )   print "KVM  Kullandığınız Tespit Edildi."
-            print "Gerekli Paketler Otomatik Yüklenecek..."
-            pacstrap /mnt qemu-guest-agent
-            print "Paketler Etkinleştiriliyor.."
-            systemctl enable qemu-guest-agent --root=/mnt
-        ;;
-        vmware  )   print "VMWare Workstation Kullandığınız Tespit Edildi."
-            print "Gerekli Paketler Otomatik Yüklenecek..."
-            pacstrap /mnt open-vm-tools
-            print "Paketler Etkinleştiriliyor.."
-            systemctl enable vmtoolsd --root=/mnt
-            systemctl enable vmware-vmblock-fuse --root=/mnt
-        ;;
-        oracle )    print "VirtualBox Kullandığınız Tespit Edildi."
-            print "Gerekli Paketler Otomatik Yüklenecek..."
-            pacstrap /mnt virtualbox-guest-utils
-            print "Paketler Etkinleştiriliyor.."
-            systemctl enable vboxservice --root=/mnt
-        ;;
-        microsoft ) print "Hyper-V  Kullandığınız Tespit Edildi."
-            print "Gerekli Paketler Otomatik Yüklenecek..."
-            pacstrap /mnt hyperv
-            print "Paketler Etkinleştiriliyor.."
-            systemctl enable hv_fcopy_daemon --root=/mnt
-            systemctl enable hv_kvp_daemon --root=/mnt
-            systemctl enable hv_vss_daemon --root=/mnt
-        ;;
-        * ) ;;
+        kvm ) 
+            install_package "qemu-guest-agent"
+            enable_service "qemu-guest-agent"
+            ;;
+        vmware ) 
+            install_package "open-vm-tools"
+            enable_service "vmtoolsd"
+            enable_service "vmware-vmblock-fuse"
+            ;;
+        oracle ) 
+            install_package "virtualbox-guest-utils"
+            enable_service "vboxservice"
+            ;;
+        microsoft ) 
+            install_package "hyperv"
+            enable_service "hv_fcopy_daemon"
+            enable_service "hv_kvp_daemon"
+            enable_service "hv_vss_daemon"
+            ;;
     esac
 }
 
+install_package() {
+    local package=$1
+    print "Gerekli Paketler Yükleniyor: $package..."
+    pacstrap /mnt $package
+}
 
-# Selecting a kernel to install (function).
-kernel_selector () {
+enable_service() {
+    local service=$1
+    print "Paket Etkinleştiriliyor: $service..."
+    systemctl enable $service --root=/mnt
+}
+
+select_kernel() {
     print "Hangi Linux Kernelini Yüklemek İstersiniz:"
     print "1) linux:  Varsayılan Linux çekirdeği"
     print "2) linux-hardened: Güvenlik odaklı bir Linux çekirdeği"
@@ -92,21 +84,16 @@ kernel_selector () {
     print "4) Zen: Masaüstü kullanımı için optimize edilmiş bir Linux çekirdeği"
     read -r -p "İlgili çekirdeğin numarasını girin: " choice
     case $choice in
-        1 ) kernel="linux"
-        ;;
-        2 ) kernel="linux-hardened"
-        ;;
-        3 ) kernel="linux-lts"
-        ;;
-        4 ) kernel="linux-zen"
-        ;;
+        1 ) kernel="linux";;
+        2 ) kernel="linux-hardened";;
+        3 ) kernel="linux-lts";;
+        4 ) kernel="linux-zen";;
         * ) print "Geçerli bir seçim girmediniz."
-            kernel_selector
+            select_kernel
     esac
 }
 
-# Selecting a way to handle internet connection (function).
-network_selector () {
+select_network() {
     print "Ağ Ayarları:"
     print "1) IWD: Intel tarafından yazılmış Linux için kablosuz bir arka plan programıdır (yalnızca WiFi)"
     print "2) NetworkManager: Tavsiye edilen evrensel ağ yardımcı programı (hem WiFi hem de Ethernet Destekler)"
@@ -115,84 +102,52 @@ network_selector () {
     print "5) Bunu daha sonra yapacağım (yalnızca ileri düzey kullanıcılar)"
     read -r -p "Yüklemek istediğiniz ağ yardımcısının numarasını girin: " choice
     case $choice in
-        1 ) print "IWD Yükleniyor"
-            pacstrap /mnt iwd
-            print "IWD Etkinleştiriliyor."
-            systemctl enable iwd --root=/mnt
-        ;;
-        2 ) print "NetworkManager Yükleniyor."
-            pacstrap /mnt networkmanager
-            print "NetworkManager Etkinleştiriliyor."
-            systemctl enable NetworkManager --root=/mnt
-        ;;
-        3 ) print "Yükleniyor wpa_supplicant and dhcpcd."
-            pacstrap /mnt wpa_supplicant dhcpcd
-            print "wpa_supplicant ve dhcpcd Etkinleştiriliyor."
-            systemctl enable wpa_supplicant --root=/mnt
-            systemctl enable dhcpcd --root=/mnt
-        ;;
-        4 ) print "dhcpcd Yükleniyor ."
-            pacstrap /mnt dhcpcd
-            print "dhcpcd Etkinleştiriliyor."
-            systemctl enable dhcpcd --root=/mnt
-        ;;
+        1 ) 
+            install_package "iwd"
+            enable_service "iwd"
+            ;;
+        2 ) 
+            install_package "networkmanager"
+            enable_service "NetworkManager"
+            ;;
+        3 ) 
+            install_package "wpa_supplicant dhcpcd"
+            enable_service "wpa_supplicant"
+            enable_service "dhcpcd"
+            ;;
+        4 ) 
+            install_package "dhcpcd"
+            enable_service "dhcpcd"
+            ;;
         5 ) ;;
-        * ) print "Geçerli bir seçim yapmadınız."
-            network_selector
+        * ) 
+            print "Geçerli bir seçim yapmadınız."
+            select_network
     esac
 }
 
-# Setting up a password for the user account (function).
-userpass_selector () {
+set_password() {
+    local user=$1
+    local pass
+    local pass_confirm
+
     while true; do
-        read -r -s -p "$username için bir kullanıcı şifre belirleyin : " userpass
-        while [ -z "$userpass" ]; do
-            echo
-            print "$username için bir şifre girmeniz gerekiyor."
-            read -r -s -p "$username için bir kullanıcı şifre belirleyin : " userpass
-            [ -n "$userpass" ] && break
-        done
+        read -r -s -p "$user için bir şifre belirleyin: " pass
         echo
-        read -r -s -p "Şifreyi tekrar girin: " userpass2
+        read -r -s -p "Şifreyi tekrar girin: " pass_confirm
         echo
-        [ "$userpass" = "$userpass2" ] && break
-        echo "Şifreler eşleşmiyor, tekrar deneyin."
-    done
-    # if [[ ! -d /etc/sudoers.d ]]; then
-    #     print "Sudo kurulu değil Sanki Amdin Kardeş. '/etc/sudoers.d' dizini Oluştursak mı ?."
-    # fi
-    # print " $username kullanıcıya yetki veriliyor"
-    # arch-chroot /mnt useradd -m -g users -G optical,storage,wheel,video,audio,users,power,network,log -s /bin/bash "$username"
-    # sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' /mnt/etc/sudoers
-    # print "$username şifresi ayarlanıyor"
-    # echo "$username:$userpass" | arch-chroot /mnt chpasswd
-}
-
-
-
-# Setting up a password for the root account (function).
-rootpass_selector () {
-    while true; do
-        read -r -s -p "root için bir şifre belirleyin: " rootpass
-        while [ -z "$rootpass" ]; do
-            echo
-            print "Root Şifrenizi Girin"
-            read -r -s -p "root şifresi: " rootpass
-            [ -n "$rootpass" ] && break
-        done
-        echo
-        read -r -s -p "Şifre (Tekrar): " rootpass2
-        echo
-        [ "$rootpass" = "$rootpass2" ] && break
-        echo "Şifreler eşleşmiyor, tekrar deneyin."
+        if [ "$pass" == "$pass_confirm" ]; then
+            echo "$user:$pass" | arch-chroot /mnt chpasswd
+            break
+        else
+            echo "Şifreler eşleşmiyor, tekrar deneyin."
+        fi
     done
 }
 
-
-# Microcode detector (function).
-microcode_detector () {
-    CPU=$(grep vendor_id /proc/cpuinfo)
-    if [[ $CPU == *"AuthenticAMD"* ]]; then
+detect_microcode() {
+    local cpu=$(grep vendor_id /proc/cpuinfo)
+    if [[ $cpu == *"AuthenticAMD"* ]]; then
         print "Bir AMD CPU algılandı, AMD mikro kodu yüklenecek."
         microcode="amd-ucode"
     else
@@ -201,190 +156,129 @@ microcode_detector () {
     fi
 }
 
-# Setting up the hostname (function).
-hostname_selector () {
+set_hostname() {
+    local hostname
     read -r -p "Lütfen ana bilgisayar adını girin: " hostname
-    if [ -z "$hostname" ]; then
-        print "Devam etmek için bir ana bilgisayar adı girmeniz gerekiyor."
-        hostname_selector
-    fi
     echo "$hostname" > /mnt/etc/hostname
-}
-
-
-# Setting up the locale (function).
-locale_selector () {
-    read -r -p "Lütfen kullandığınız yerel ayarı girin (biçim: xx_XX ,örneğin tr_TR veya en_US kullanmak için boş girin): " locale
-    if [ -z "$locale" ]; then
-        print "en_US varsayılan yerel ayar olarak kullanılacaktır."
-        locale="en_US"
-    fi
-    echo "$locale.UTF-8 UTF-8"  > /mnt/etc/locale.gen
-    echo "LANG=$locale.UTF-8" > /mnt/etc/locale.conf
-}
-
-
-# Setting up the keyboard layout (function).
-keyboard_selector () {
-    read -r -p "Lütfen kullandığınız klavye düzenini girin (Türkçe klavye düzenini kullanmak için boş bırakıp enter basın): " kblayout
-    if [ -z "$kblayout" ]; then
-        print "TR klavye düzeni varsayılan olarak kullanılacaktır."
-        kblayout="trq"
-    fi
-    echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
-}
-
-
-part_disk(){
-    # Deleting old partition scheme.
-    read -r -p "Bu, $DISK üzerindeki mevcut tüm bölümleri siler. [e/H]'ye onaylıyor musunuz? " response
-    response=${response,,}
-    if [[ "$response" =~ ^(evet|e)$ ]]; then
-        print "Disk bölme işlemi başlıyor. $DISK."
-        # setup grub
-        if [ -d /sys/firmware/efi/efivars ]; then
-            print "$DISK UEFI Sisteme Göre Biçimlendiriliyor"
-            print "Siliniyor $DISK."
-            wipefs -af "$DISK"
-            sgdisk -Zo "$DISK"
-            parted -s --align optimal $DISK mklabel gpt
-            parted -s --align optimal $DISK mkpart ESP fat32 1M 513M
-            parted -s --align optimal $DISK set 1 esp on
-            parted -s --align optimal $DISK mkpart primary  linux-swap 513M 4G
-            parted -s --align optimal $DISK mkpart primary  4G 100%
-        else
-            print "$DISK MBR&BIOS Sisteme Göre Biçimlendiriliyor"
-            parted -s --align optimal $DISK mklabel msdos
-            parted -s --align optimal $DISK mkpart primary 1M 513M
-            parted -s --align optimal $DISK mkpart primary 513M 4G
-            parted -s --align optimal $DISK mkpart primary 4G 100%
-        fi
-    else
-        print "Çıkış Yapıldı."
-        exit
-    fi
-}
-
-format_disk(){
-    if [[ -d /sys/firmware/efi/efivars ]]; then
-        print "UEFI Boot Oluşturuluyor $DISK"
-        echo y | mkfs.ext4 "$DISK"3
-        mount "$DISK"3 /mnt
-        mkfs.fat -F 32 "$DISK"1
-        mkdir -p /mnt/boot/
-        mount "$DISK"1 /mnt/boot
-    else
-        print "BIOS&MBR Bölüm Oluşturuluyor.."
-        echo y | mkfs.ext4 "$DISK"3
-        mount "$DISK"3 /mnt
-        mkfs.fat -F32 "$DISK"1
-        mkdir -p /mnt/boot
-        mount "$DISK"1 /mnt/boot
-    fi
-    echo -e "$R Diskler Sisteme Yerleştiriliyor.          $reset"
-    mkswap "$DISK"2
-    swapon "$DISK"2
-    lsblk
-    print "5 Saniye Bekleyin"
-    sleep 5
-}
-
-
-# Workstation
-
-logo
-internet_check
-part_disk || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-format_disk || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-kernel_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-microcode_detector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-virt_check || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-network_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-
-# Pacstrap (setting up a base sytem onto the new root).
-print "Temel sistemin kurulması (biraz zaman alabilir)."
-pacstrap /mnt --needed base base-devel $kernel $microcode linux-headers linux-firmware grub rsync efibootmgr reflector man vim nano git sudo
-
-hostname_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-
-print "Fstab Oluşturuluyor."
-genfstab -U /mnt >> /mnt/etc/fstab
-
-# Setting username.
-read -r -p "Lütfen bir kullanıcı hesabı için ad girin: " username
-userpass_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-rootpass_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-locale_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-keyboard_selector || error "Bir şeyler ters gitti, belki scriptten, belki de senden, kim bilir. :("
-
-
-print "Host Dosyanız Ayarlanıyor."
-cat > /mnt/etc/hosts <<EOF
+    cat > /mnt/etc/hosts <<EOF
 127.0.0.1   localhost
 ::1         localhost
 127.0.1.1   $hostname.localdomain   $hostname
 EOF
+}
 
+set_locale() {
+    local locale
+    read -r -p "Lütfen kullandığınız yerel ayarı girin (örneğin tr_TR veya en_US): " locale
+    locale=${locale:-en_US}
+    echo "$locale.UTF-8 UTF-8" > /mnt/etc/locale.gen
+    echo "LANG=$locale.UTF-8" > /mnt/etc/locale.conf
+}
 
-# Configuring the system.
-arch-chroot /mnt /bin/bash -e <<EOF
-    
-    echo "Saat Ayarlanıyor."
-    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
-    
-    echo "Sistem Saati Senkronize Ediliyor."
+set_keyboard_layout() {
+    local kblayout
+    read -r -p "Lütfen kullandığınız klavye düzenini girin (örneğin trq): " kblayout
+    kblayout=${kblayout:-trq}
+    echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
+}
+
+partition_disk() {
+    local disk=$1
+    read -r -p "Bu, $disk üzerindeki mevcut tüm bölümleri siler. Onaylıyor musunuz? [e/H]: " response
+    response=${response,,}
+    if [[ "$response" =~ ^(e|evet)$ ]]; then
+        print "Disk bölme işlemi başlıyor: $disk."
+        wipefs -af "$disk"
+        sgdisk -Zo "$disk"
+        if [ -d /sys/firmware/efi/efivars ]; then
+            parted -s --align optimal $disk mklabel gpt
+            parted -s --align optimal $disk mkpart ESP fat32 1M 513M
+            parted -s --align optimal $disk set 1 esp on
+            parted -s --align optimal $disk mkpart primary linux-swap 513M 4G
+            parted -s --align optimal $disk mkpart primary 4G 100%
+        else
+            parted -s --align optimal $disk mklabel msdos
+            parted -s --align optimal $disk mkpart primary 1M 513M
+            parted -s --align optimal $disk mkpart primary 513M 4G
+            parted -s --align optimal $disk mkpart primary 4G 100%
+        fi
+    else
+        error "Disk bölme işlemi iptal edildi."
+    fi
+}
+
+format_disk() {
+    local disk=$1
+    if [[ -d /sys/firmware/efi/efivars ]]; then
+        mkfs.ext4 "${disk}3"
+        mount "${disk}3" /mnt
+        mkfs.fat -F32 "${disk}1"
+        mkdir -p /mnt/boot
+        mount "${disk}1" /mnt/boot
+    else
+        mkfs.ext4 "${disk}3"
+        mount "${disk}3" /mnt
+        mkfs.fat -F32 "${disk}1"
+        mkdir -p /mnt/boot
+        mount "${disk}1" /mnt/boot
+    fi
+    mkswap "${disk}2"
+    swapon "${disk}2"
+}
+
+run_arch_chroot() {
+    arch-chroot /mnt /bin/bash -e <<EOF
+    ln -sf /usr/share/zoneinfo/\$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
     hwclock --systohc
-    
-    echo "Dil Dosyaları oluşturuluyor."
-     locale-gen
+    locale-gen
+    mkinitcpio -P
 
-    # Generating a new initramfs.
-    echo "Yeni  initramfs oluşturuluyor..."
-    rm -rf /etc/mkinitcpio.d/linux.preset
-    pacman -S linux linux-firmware linux-headers grub efibootmgr --noconfirm
-    mkinitcpio -p linux
+    if [[ -d /sys/firmware/efi/efivars ]]; then
+        grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
+    else
+        grub-install --target=i386-pc $DISK --recheck --debug
+        echo "GRUB_DISABLE_OS_PROBER=true" > /etc/default/grub
+    fi
+    grub-mkconfig -o /boot/grub/grub.cfg
 
-    # Installing GRUB.
-    echo "GRUB Yükleniyor /boot."
-    # Installing grub
-if [[ -d /sys/firmware/efi/efivars ]]; then
-    echo "+-----------------------------+"
-    echo "+ UEFI Sistem Algılandı              +"
-    echo "+-----------------------------+"
-    grub-install --target=x86_64-efi --efi-directory=/boot/ --bootloader-id=GRUB --recheck
-else
-    echo "+-----------------------------+"
-    echo "+ BIOS-MBR Sistem Algılandı             +"
-    echo "+-----------------------------+"
-    grub-install --target=i386-pc $DISK --recheck --debug
-    # Creating grub config file.
-    echo "+-----------------------------+"
-    echo "+ GRUB Dosyası Oluşturuluyor.  +"
-    echo "+-----------------------------+"
-    echo "GRUB_DISABLE_OS_PROBER=true" > /etc/default/grub
-fi
-
-grub-mkconfig -o /boot/grub/grub.cfg
-
-
-echo "$username adlı kullanıcıya yetki veriliyor"
-useradd -m -g users -G optical,storage,wheel,video,audio,users,power,network,log -s /bin/bash "$username"
-usermod -aG wheel $username
-echo "$username şifresi ayarlanıyor"
-echo "$username:$userpass" | chpasswd
-echo "${username} ALL=(ALL:ALL) ALL" >> /etc/sudoers
-echo "%wheel	ALL=(ALL:ALL) ALL" >> /etc/sudoers
-echo "%wheel	ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+    useradd -m -g users -G wheel -s /bin/bash "$username"
+    echo "${username} ALL=(ALL:ALL) ALL" >> /etc/sudoers
+    echo "%wheel	ALL=(ALL:ALL) ALL" >> /etc/sudoers
+    echo "%wheel	ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 EOF
+}
 
-print "Root Şifreniz Ayarlanıyor."
-echo "root:$rootpass" | arch-chroot /mnt chpasswd
+main() {
+    show_logo
+    check_internet
+    select_disk
+    partition_disk "$DISK"
+    format_disk "$DISK"
+    select_kernel
+    detect_microcode
+    detect_virtualization
+    select_network
 
+    print "Temel sistem kuruluyor (biraz zaman alabilir)."
+    pacstrap /mnt --needed base base-devel $kernel $microcode linux-headers linux-firmware grub rsync efibootmgr reflector man vim nano git sudo
 
-# Pacman eye-candy features.
-print "Pacman'da renk, animasyon ve paralel indirme etkinleştiriliyor."
-sed -i 's/#Color/Color\nILoveCandy/;s/^#ParallelDownloads.*$/ParallelDownloads = 10/' /mnt/etc/pacman.conf
+    set_hostname
+    set_locale
+    set_keyboard_layout
 
-# Finishing up.
-print "Bitti, şimdi yeniden yeniden başlatabilirsiniz (kullanıcı adı ve şifre girdikten sonra paketleri yüklemeyi unutmayın.)."
-exit
+    print "Fstab Oluşturuluyor."
+    genfstab -U /mnt >> /mnt/etc/fstab
+
+    read -r -p "Lütfen bir kullanıcı hesabı için ad girin: " username
+    set_password "$username"
+    set_password "root"
+
+    run_arch_chroot
+
+    print "Pacman'da renk, animasyon ve paralel indirme etkinleştiriliyor."
+    sed -i 's/#Color/Color\nILoveCandy/;s/^#ParallelDownloads.*$/ParallelDownloads = 10/' /mnt/etc/pacman.conf
+
+    print "Bitti, şimdi yeniden başlatabilirsiniz (kullanıcı adı ve şifre girdikten sonra paketleri yüklemeyi unutmayın)."
+}
+
+main
