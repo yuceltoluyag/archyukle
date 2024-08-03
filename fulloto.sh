@@ -237,6 +237,16 @@ format_disk() {
     swapon "${disk}2"
 }
 
+check_disk_format() {
+    local disk=$1
+    if mount | grep -q "/mnt"; then
+        print "Disk zaten biçimlendirilmiş ve monte edilmiş, bu adımlar atlanacak."
+        return 1
+    else
+        return 0
+    fi
+}
+
 run_arch_chroot() {
     arch-chroot /mnt /bin/bash -e <<EOF
     ln -sf /usr/share/zoneinfo/\$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
@@ -263,8 +273,12 @@ main() {
     show_logo
     check_internet
     select_disk
-    partition_disk "$DISK"
-    format_disk "$DISK"
+    
+    if check_disk_format "$DISK"; then
+        partition_disk "$DISK"
+        format_disk "$DISK"
+    fi
+    
     select_kernel
     detect_microcode
     detect_virtualization
