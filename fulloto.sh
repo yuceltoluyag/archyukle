@@ -34,10 +34,10 @@ select_disk() {
 
 check_internet() {
     print "İnternet Bağlantınız Kontrol Ediliyor...\n"
-    if ! curl -s --head --request GET https://www.google.com | grep "200 OK" > /dev/null; then
-        error "İnternet Bağlantınız Başarısız Oldu\n"
-    else
+    if curl -Is http://www.archlinux.org | head -n 1 | grep "200 OK" > /dev/null; then
         print "İnternet Bağlantısı Başarılı.\n"
+    else
+        error "İnternet Bağlantınız Başarısız Oldu\n"
     fi
 }
 
