@@ -136,7 +136,9 @@ set_user_and_password() {
     local retry_limit=3
     local attempts=0
 
-    if [ "$user" != "root" ]; then
+    if id -u "$user" >/dev/null 2>&1; then
+        echo "Kullanıcı $user zaten mevcut. Şifresi güncellenecek."
+    else
         # Kullanıcıyı oluştur
         arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$user"
     fi
