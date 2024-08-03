@@ -34,7 +34,7 @@ select_disk() {
 
 check_internet() {
     print "İnternet Bağlantınız Kontrol Ediliyor...\n"
-    if curl -Is http://www.archlinux.org | head -n 1 | grep "200 OK" > /dev/null; then
+    if wget -q --spider http://www.archlinux.org; then
         print "İnternet Bağlantısı Başarılı.\n"
     else
         error "İnternet Bağlantınız Başarısız Oldu\n"
