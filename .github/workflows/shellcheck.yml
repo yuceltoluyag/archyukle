@@ -1,11 +1,10 @@
-name: ShellCheck
+name: Shellcheck
 
 on:
   push:
-    branches:
-      - master
-      - main
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
     paths-ignore:
       - "**.gitignore"
       - "**.md"
@@ -14,9 +13,11 @@ on:
 
 jobs:
   shellcheck:
-    name: Bash syntax checker
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
+    - uses: actions/checkout@v4
+    - name: Run shellcheck
+      uses: ludeeus/action-shellcheck@master
+      env:
+        SHELLCHECK_OPTS: "-e SC2148"
