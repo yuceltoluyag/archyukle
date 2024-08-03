@@ -1,4 +1,6 @@
-﻿# Kolay Arch Linux Kurulumu # archyukle!
+[![ShellCheck](https://github.com/yuceltoluyag/archyukle/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/yuceltoluyag/archyukle/actions/workflows/shellcheck.yml)
+
+ # Kolay Arch Linux Kurulumu # archyukle!
 
 Merhaba ! kolay arch linux kurulumu ile kurulum otomatik olarak tamamlanacaktır **Test**. Aşamasındandır geliştirmeye devam ediyorum.
 
