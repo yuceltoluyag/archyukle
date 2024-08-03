@@ -268,10 +268,11 @@ run_arch_chroot() {
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
 
-    useradd -m -g users -G wheel -s /bin/bash "$username"
-    echo "${username} ALL=(ALL:ALL) ALL" >> /etc/sudoers
-    echo "%wheel	ALL=(ALL:ALL) ALL" >> /etc/sudoers
-    echo "%wheel	ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+    # Bu kısmı kaldırıyoruz
+    # useradd -m -g users -G wheel -s /bin/bash "$username"
+    # echo "${username} ALL=(ALL:ALL) ALL" >> /etc/sudoers
+    # echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers
+    # echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 EOF
 }
 
@@ -281,7 +282,6 @@ main() {
     check_internet
     select_disk
 
-    # Disk kontrol ve montaj adımlarını kaldırıyoruz
     partition_disk "$DISK"
     format_disk "$DISK"
 
@@ -313,5 +313,3 @@ main() {
 }
 
 main
-
-
