@@ -259,6 +259,24 @@ check_disk_format() {
     fi
 }
 
+check_disk_format() {
+    if mount | grep -q "/mnt"; then
+        print "Disk zaten biçimlendirilmiş ve monte edilmiş, bu adımlar atlanacak."
+        return 0
+    else
+        return 1
+    fi
+}
+
+mount_existing_partitions() {
+    local disk=$1
+    print "Mevcut bölümler monte ediliyor: $disk."
+    mount "${disk}3" /mnt
+    mkdir -p /mnt/boot
+    mount "${disk}1" /mnt/boot
+    swapon "${disk}2"
+}
+
 run_arch_chroot() {
     arch-chroot /mnt /bin/bash -e <<EOF
     ln -sf /usr/share/zoneinfo/\$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
@@ -285,10 +303,12 @@ main() {
     show_logo
     check_internet
     select_disk
-    
+
     if ! check_disk_format; then
         partition_disk "$DISK"
         format_disk "$DISK"
+    else
+        mount_existing_partitions "$DISK"
     fi
     
     select_kernel
