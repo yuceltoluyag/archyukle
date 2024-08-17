@@ -202,7 +202,7 @@ cat <<EOL > /etc/hosts
 127.0.1.1   $HOSTNAME.localdomain $HOSTNAME
 EOL
 
-systemctl enable systemd-networkd systemd-resolved systemd-timesyncd
+systemctl enable iwd systemd-networkd systemd-resolved systemd-timesyncd
 rm /etc/resolv.conf
 ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
