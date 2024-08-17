@@ -10,6 +10,15 @@ setfont ter-v28b
 # Klavye düzenini yükleme (Türkçe Q)
 loadkeys trq
 
+# UEFI ya da BIOS kontrolü
+if [ -d /sys/firmware/efi ]; then
+    echo "UEFI sistemi tespit edildi. UEFI kurulumu başlatılıyor..."
+    BOOT_MODE="UEFI"
+else
+    echo "MBR (BIOS) sistemi tespit edildi. BIOS kurulumu başlatılıyor..."
+    BOOT_MODE="BIOS"
+fi
+
 # VirtualBox ortamında olup olmadığını kontrol etme
 if grep -q "VirtualBox" /sys/class/dmi/id/product_name; then
     echo "VirtualBox ortamı tespit edildi, Ethernet ile devam ediliyor..."
@@ -86,15 +95,31 @@ if [ "$FIX_PARTITIONS" == "y" ]; then
     sgdisk -o "$DISK"  # Bu komut otomatik olarak yeni GPT tablosu oluşturur.
 fi
 
-# Disk bölümlendirme ve formatlama (UEFI)
-sgdisk -Z "$DISK"
-sgdisk -o "$DISK"
-partprobe -s "$DISK"
+# UEFI ya da BIOS moduna göre bölümlendirme
+if [ "$BOOT_MODE" == "UEFI" ]; then
+    # UEFI sistemde EFI ve root bölümleri oluşturma
+    sgdisk -n 1:0:+512M -t 1:EF00 "$DISK"  # 512MB EFI bölümünü oluşturma
+    sgdisk -n 2:0:0 -t 2:8300 "$DISK"  # Kalan alanı root (Linux) bölümü olarak ayarlama
+else
+    # BIOS sistemde MBR kullanarak bölümlendirme
+    parted "$DISK" mklabel msdos
+    parted "$DISK" mkpart primary ext4 1MiB 100%  # Tüm alanı root olarak ayarla
+    parted "$DISK" set 1 boot on  # Boot flag ekle
+fi
 
-# Disk bölümleri formatlama
-mkfs.fat -F32 -n ESP "${DISK}1"
-cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
-cryptsetup luksOpen "${DISK}2" cryptlvm
+# Bölümleri tarama
+partprobe "$DISK"
+
+# Bölümleri formatlama
+if [ "$BOOT_MODE" == "UEFI" ]; then
+    mkfs.fat -F32 -n ESP "${DISK}1"
+    cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
+    cryptsetup luksOpen "${DISK}2" cryptlvm
+else
+    mkfs.ext4 "${DISK}1"
+    cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}1"
+    cryptsetup luksOpen "${DISK}1" cryptlvm
+fi
 
 # LVM oluşturma
 pvcreate /dev/mapper/cryptlvm
@@ -112,8 +137,10 @@ mkswap -L SWAP /dev/vg/swap
 
 # Dosya sistemlerini bağlama ve swap'ı etkinleştirme
 mount /dev/vg/root /mnt
-mkdir /mnt/efi
-mount "${DISK}1" /mnt/efi
+if [ "$BOOT_MODE" == "UEFI" ]; then
+    mkdir /mnt/efi
+    mount "${DISK}1" /mnt/efi
+fi
 swapon /dev/vg/swap
 
 # Aynaları güncelleme ve sistem kurma (Almanya için)
@@ -209,7 +236,12 @@ sbctl sign -s /efi/EFI/Linux/arch-linux-zen.efi
 sbctl sign -s /efi/EFI/Linux/arch-linux-zen-fallback.efi
 
 # Boot loader kurulumu
-bootctl install --esp-path=/efi
+if [ "$BOOT_MODE" == "UEFI" ]; then
+    bootctl install --esp-path=/efi
+else
+    grub-install --target=i386-pc --recheck "$DISK"
+    grub-mkconfig -o /boot/grub/grub.cfg
+fi
 
 # Çıkış ve disk senkronizasyonu
 exit
