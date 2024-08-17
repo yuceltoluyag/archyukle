@@ -81,52 +81,59 @@ lsblk -o NAME,SIZE,TYPE,MOUNTPOINT
 echo "Kurulum diskinizi belirleyin (örneğin /dev/sda):"
 read -r DISK
 
-# Diskte geçersiz GPT veya MBR hataları varsa düzeltme adımları
-echo "Diskteki geçersiz partition tablolarını düzeltmek ister misiniz? (y/n)"
-read -r FIX_PARTITIONS
-if [ "$FIX_PARTITIONS" == "y" ]; then
-    sgdisk -Z "$DISK"
-    echo "Geçersiz GPT ve MBR tabloları temizlendi. Yeni bir GPT tablosu oluşturuluyor..."
-    sgdisk -o "$DISK"  # Bu komut otomatik olarak yeni GPT tablosu oluşturur.
-fi
+# Diskteki verileri güvenli şekilde silme
+shred -v -n1 "$DISK"
 
-# UEFI sistemde EFI ve root bölümleri oluşturma
-sgdisk -n 1:0:+512M -t 1:EF00 "$DISK"  # 512MB EFI bölümünü oluşturma
-sgdisk -n 2:0:0 -t 2:8300 "$DISK"  # Kalan alanı root (Linux) bölümü olarak ayarlama
+# GPT Partition tablosu oluşturma
+gdisk "$DISK" <<EOF
+o
+y
+n
+1
+
++512M
+ef00
+n
+2
+
+
+8e00
+w
+y
+EOF
 
 # Bölümleri tarama
 partprobe "$DISK"
 
-# Bölümü temizleme ve şifrelemeye hazırlama
-wipefs -a "${DISK}2"  # Tüm dosya sistemi imzalarını kaldır
+# EFI ve root bölümleri oluşturma
+mkfs.fat -F32 "${DISK}1"
 
-# Eğer wipefs yeterli olmazsa, dd ile sıfırlayabilirsiniz
-dd if=/dev/zero of="${DISK}2" bs=1M count=100  # İlk 100MB'yi sıfırlama (daha derin temizlik)
+# Şifreleme modülü yükleme
+modprobe dm-crypt
 
-# Bölümleri formatlama
-mkfs.fat -F32 -n ESP "${DISK}1"
-cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
-cryptsetup luksOpen "${DISK}2" cryptlvm
+# Root bölümünü şifreleme
+cryptsetup luksFormat "${DISK}2"
+cryptsetup open --type luks "${DISK}2" cryptlvm
 
-# LVM oluşturma
+# LVM yapılandırma
 pvcreate /dev/mapper/cryptlvm
-vgcreate vg /dev/mapper/cryptlvm
+vgcreate volume /dev/mapper/cryptlvm
+lvcreate -L20G volume -n swap
+lvcreate -L40G volume -n root
+lvcreate -l 100%FREE volume -n home
 
-echo "Swap alanı için boyut belirtin (örneğin 8G):"
-read -r SWAPSIZE
-
-lvcreate --size "$SWAPSIZE" vg --name swap
-lvcreate -l +100%FREE vg --name root
-
-# Dosya sistemlerini formatlama
-mkfs.ext4 -L ROOT /dev/vg/root
-mkswap -L SWAP /dev/vg/swap
+# Dosya sistemlerini oluşturma
+mkfs.ext4 /dev/volume/root
+mkfs.ext4 /dev/volume/home
+mkswap /dev/volume/swap
 
 # Dosya sistemlerini bağlama ve swap'ı etkinleştirme
-mount /dev/vg/root /mnt
-mkdir /mnt/efi
-mount "${DISK}1" /mnt/efi
-swapon /dev/vg/swap
+mount /dev/volume/root /mnt
+mkdir /mnt/home
+mkdir /mnt/boot
+mount /dev/volume/home /mnt/home
+mount "${DISK}1" /mnt/boot
+swapon /dev/volume/swap
 
 # Reflector kontrolü ve kurulumu
 if ! command -v reflector &> /dev/null; then
@@ -138,7 +145,7 @@ fi
 reflector --verbose --country 'Germany' -l 5 --sort rate --save /etc/pacman.d/mirrorlist
 
 # Sistemi kurma
-pacstrap -K /mnt base base-devel linux-zen linux-zen-firmware intel-ucode cryptsetup lvm2 vim git iwd sbctl
+pacstrap /mnt base base-devel linux linux-firmware lvm2 vim git
 
 # fstab oluşturma
 genfstab -U /mnt >> /mnt/etc/fstab
@@ -218,18 +225,27 @@ FallbackNTP=0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.p
 EOL
 
 # mkinitcpio yapılandırması
-sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block sd-encrypt lvm2 filesystems keyboard fsck)/' /etc/mkinitcpio.conf
+sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap modconf block encrypt lvm2 filesystems fsck)/' /etc/mkinitcpio.conf
 mkinitcpio -P
 
-# Secure Boot için sbctl yapılandırması
-sbctl create-keys
-sbctl enroll-keys -m
-sbctl sign -s -o /usr/lib/systemd/boot/efi/linuxx64.efi.stub.signed /usr/lib/systemd/boot/efi/linuxx64.efi.stub
-sbctl sign -s /efi/EFI/Linux/arch-linux-zen.efi
-sbctl sign -s /efi/EFI/Linux/arch-linux-zen-fallback.efi
-
 # Boot loader kurulumu
-bootctl install --esp-path=/efi
+bootctl install --esp-path=/boot
+
+# Boot loader konfigürasyonu
+cat <<EOL > /boot/loader/loader.conf
+default arch
+timeout 3
+editor 0
+EOL
+
+# Boot entry oluşturma
+UUID=$(blkid -s UUID -o value "${DISK}2")
+cat <<EOL > /boot/loader/entries/arch.conf
+title Arch Linux
+linux /vmlinuz-linux
+initrd /initramfs-linux.img
+options cryptdevice=UUID=$UUID:cryptlvm root=/dev/volume/root quiet rw
+EOL
 
 # Çıkış ve disk senkronizasyonu
 exit
