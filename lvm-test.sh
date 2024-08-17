@@ -77,6 +77,15 @@ lsblk -o NAME,SIZE,TYPE,MOUNTPOINT
 echo "Kurulum diskinizi belirleyin (örneğin /dev/sda):"
 read -r DISK
 
+# Diskte geçersiz GPT veya MBR hataları varsa düzeltme adımları
+echo "Diskteki geçersiz partition tablolarını düzeltmek ister misiniz? (y/n)"
+read -r FIX_PARTITIONS
+if [ "$FIX_PARTITIONS" == "y" ]; then
+    sgdisk -Z "$DISK"
+    echo "Geçersiz GPT ve MBR tabloları temizlendi. Yeni bir GPT tablosu oluşturuluyor..."
+    gdisk "$DISK"
+fi
+
 # Disk bölümlendirme ve formatlama (UEFI)
 sgdisk -Z "$DISK"
 gdisk "$DISK"
