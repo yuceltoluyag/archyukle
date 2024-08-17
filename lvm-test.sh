@@ -3,8 +3,6 @@
 # Terminus fontunu yükleme ve ayarlama (ilk işlem olarak)
 echo "Terminus fontu yükleniyor..."
 sudo pacman -S --noconfirm terminus-font
-
-# Biraz daha küçük boyutlu Terminus fontunu ayarlama (28pt)
 setfont ter-v28b
 
 # Klavye düzenini yükleme (Türkçe Q)
@@ -12,7 +10,7 @@ loadkeys trq
 
 # UEFI kontrolü
 if [ ! -d /sys/firmware/efi ]; then
-    echo "Bu script sadece UEFI sistemler için geçerlidir. MBR sistemi tespit edildi, çıkılıyor..."
+    echo "Bu script sadece UEFI sistemler için geçerlidir. Çıkılıyor..."
     exit 1
 fi
 
