@@ -4,8 +4,8 @@
 echo "Terminus fontu yükleniyor..."
 sudo pacman -S --noconfirm terminus-font
 
-# Büyük boyutlu Terminus fontunu ayarlama (32pt)
-setfont ter-v32b
+# Biraz daha küçük boyutlu Terminus fontunu ayarlama (28pt)
+setfont ter-v28b
 
 # Klavye düzenini yükleme (Türkçe Q)
 loadkeys trq
@@ -68,6 +68,10 @@ fi
 
 # Bağlantıyı test etme
 ping -c3 gnu.org
+
+# Mevcut diskleri gösterme
+echo "Mevcut diskler:"
+lsblk -o NAME,SIZE,TYPE,MOUNTPOINT
 
 # Kurulum diskini belirleme
 echo "Kurulum diskinizi belirleyin (örneğin /dev/sda):"
