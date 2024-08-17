@@ -111,6 +111,9 @@ fi
 # Bölümleri tarama
 partprobe "$DISK"
 
+# Bölümü temizleme ve şifrelemeye hazırlama
+wipefs -a "${DISK}2"
+
 # Bölümleri formatlama
 if [ "$BOOT_MODE" == "UEFI" ]; then
     mkfs.fat -F32 -n ESP "${DISK}1"
