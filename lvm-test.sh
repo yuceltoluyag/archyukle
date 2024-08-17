@@ -152,8 +152,16 @@ else
 fi
 swapon /dev/vg/swap
 
-# Aynaları güncelleme ve sistem kurma (Almanya için)
-reflector --country Germany --age 24 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+# Reflector kontrolü ve kurulumu
+if ! command -v reflector &> /dev/null; then
+    echo "Reflector yüklü değil. Yükleniyor..."
+    pacman -S --noconfirm reflector
+fi
+
+# Reflector ile en hızlı mirrorları bulma ve kaydetme
+reflector --verbose --country 'Germany' -l 5 --sort rate --save /etc/pacman.d/mirrorlist
+
+# Sistemi kurma (Almanya için)
 pacstrap -K /mnt base base-devel linux-zen linux-zen-firmware intel-ucode cryptsetup lvm2 vim git iwd sbctl
 
 # fstab oluşturma
