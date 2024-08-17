@@ -117,7 +117,7 @@ if [ "$BOOT_MODE" == "UEFI" ]; then
     cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
     cryptsetup luksOpen "${DISK}2" cryptlvm
 else
-    mkfs.ext4 "${DISK}2"  # Root bölümünü formatla
+    mkfs.ext4 -F "${DISK}2"  # Root bölümünü force bayrağıyla formatla
     cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
     cryptsetup luksOpen "${DISK}2" cryptlvm
 fi
