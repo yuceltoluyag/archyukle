@@ -118,7 +118,7 @@ cryptsetup open --type luks "${DISK}2" cryptlvm
 # LVM yapılandırma
 pvcreate /dev/mapper/cryptlvm
 vgcreate volume /dev/mapper/cryptlvm
-lvcreate -L20G volume -n swap
+lvcreate -L2G volume -n swap  # Swap alanı 2GB olarak ayarlandı
 lvcreate -L40G volume -n root
 lvcreate -l 100%FREE volume -n home
 
