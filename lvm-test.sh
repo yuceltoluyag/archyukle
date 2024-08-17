@@ -103,8 +103,9 @@ if [ "$BOOT_MODE" == "UEFI" ]; then
 else
     # BIOS sistemde MBR kullanarak bölümlendirme
     parted "$DISK" mklabel msdos
-    parted "$DISK" mkpart primary ext4 1MiB 100%  # Tüm alanı root olarak ayarla
+    parted "$DISK" mkpart primary ext4 1MiB 512MiB  # 512MB boot bölümü
     parted "$DISK" set 1 boot on  # Boot flag ekle
+    parted "$DISK" mkpart primary ext4 512MiB 100%  # Kalan alanı root olarak ayarla
 fi
 
 # Bölümleri tarama
@@ -116,9 +117,9 @@ if [ "$BOOT_MODE" == "UEFI" ]; then
     cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
     cryptsetup luksOpen "${DISK}2" cryptlvm
 else
-    mkfs.ext4 "${DISK}1"
-    cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}1"
-    cryptsetup luksOpen "${DISK}1" cryptlvm
+    mkfs.ext4 "${DISK}2"  # Root bölümünü formatla
+    cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
+    cryptsetup luksOpen "${DISK}2" cryptlvm
 fi
 
 # LVM oluşturma
@@ -140,6 +141,8 @@ mount /dev/vg/root /mnt
 if [ "$BOOT_MODE" == "UEFI" ]; then
     mkdir /mnt/efi
     mount "${DISK}1" /mnt/efi
+else
+    mount "${DISK}1" /mnt/boot
 fi
 swapon /dev/vg/swap
 
