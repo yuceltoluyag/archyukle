@@ -1,26 +1,70 @@
 #!/bin/bash
 
-# Türkçe Q klavye düzenini yükleme
+# Terminus fontunu yükleme ve ayarlama (ilk işlem olarak)
+echo "Terminus fontu yükleniyor..."
+sudo pacman -S --noconfirm terminus-font
+
+# Büyük boyutlu Terminus fontunu ayarlama (32pt)
+setfont ter-v32b
+
+# Klavye düzenini yükleme (Türkçe Q)
 loadkeys trq
 
-# Wi-Fi arayüzü tespit etme
-INTERFACE=$(iw dev | awk '$1=="Interface"{print $2}')
+# VirtualBox ortamında olup olmadığını kontrol etme
+if grep -q "VirtualBox" /sys/class/dmi/id/product_name; then
+    echo "VirtualBox ortamı tespit edildi, Ethernet ile devam ediliyor..."
+    CONNECTION_TYPE="2"
+else
+    # Kullanıcıya bağlantı türünü sorma
+    echo "Bağlantı türünü seçin:"
+    echo "1) Wi-Fi"
+    echo "2) Ethernet"
+    read -r CONNECTION_TYPE
+fi
 
-# Wi-Fi engellemesini kaldırma
-rfkill unblock wifi
+if [ "$CONNECTION_TYPE" == "1" ]; then
+    # Wi-Fi arayüzü tespit etme
+    INTERFACE=$(iw dev | awk '$1=="Interface"{print $2}')
 
-# Wi-Fi arayüzünü etkinleştirme
-ip link set "$INTERFACE" up
+    if [ -z "$INTERFACE" ]; then
+        echo "Wi-Fi arayüzü bulunamadı! VirtualBox veya fiziksel cihazda çalıştığınızdan emin olun."
+        exit 1
+    fi
 
-# Wi-Fi ağına bağlanma
-iwctl <<EOF
-  station $INTERFACE scan
-  station $INTERFACE get-networks
-  echo "Bağlanmak istediğiniz ağın ismini girin (SSID):"
-  read -r SSID
-  station $INTERFACE connect $SSID
-  exit
+    # Wi-Fi engellemesini kaldırma
+    rfkill unblock wifi
+
+    # Wi-Fi arayüzünü etkinleştirme
+    ip link set "$INTERFACE" up
+
+    # Wi-Fi ağına bağlanma
+    iwctl <<EOF
+      station $INTERFACE scan
+      station $INTERFACE get-networks
+      echo "Bağlanmak istediğiniz ağın ismini girin (SSID):"
+      read -r SSID
+      station $INTERFACE connect $SSID
+      exit
 EOF
+
+elif [ "$CONNECTION_TYPE" == "2" ]; then
+    # Ethernet arayüzü tespit etme (enp0s3 gibi)
+    INTERFACE=$(ip link | awk -F: '/enp/{print $2}' | head -n 1 | xargs)
+
+    if [ -z "$INTERFACE" ]; then
+        echo "Ethernet arayüzü bulunamadı!"
+        exit 1
+    fi
+
+    # Ethernet arayüzünü etkinleştirme
+    ip link set "$INTERFACE" up
+
+    # DHCP ile IP adresi alma
+    dhclient "$INTERFACE"
+else
+    echo "Geçersiz seçim! Lütfen 1 veya 2'yi seçin."
+    exit 1
+fi
 
 # Bağlantıyı test etme
 ping -c3 gnu.org
@@ -101,25 +145,28 @@ cat <<EOL > /etc/hosts
 127.0.1.1   $HOSTNAME.localdomain $HOSTNAME
 EOL
 
-systemctl enable iwd systemd-networkd systemd-resolved systemd-timesyncd
+systemctl enable systemd-networkd systemd-resolved systemd-timesyncd
 rm /etc/resolv.conf
 ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 # Ağ ayarları yapılandırması
-cat <<EOL > /etc/iwd/main.conf
-[General]
-UseDefaultInterface=true
-AddressRandomization=network
-AddressRandomizationRange=full
-EOL
-
-cat <<EOL > /etc/systemd/network/wifi.network
+if [ "$CONNECTION_TYPE" == "1" ]; then
+    cat <<EOL > /etc/systemd/network/wifi.network
 [Match]
 Name=$INTERFACE
 [Network]
 DHCP=yes
 IPv6PrivacyExtensions=true
 EOL
+else
+    cat <<EOL > /etc/systemd/network/ethernet.network
+[Match]
+Name=$INTERFACE
+[Network]
+DHCP=yes
+IPv6PrivacyExtensions=true
+EOL
+fi
 
 cat <<EOL > /etc/systemd/resolved.conf
 DNS=1.1.1.1#cloudflare-dns.com 1.0.0.1#cloudflare-dns.com
