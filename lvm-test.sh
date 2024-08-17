@@ -10,13 +10,10 @@ setfont ter-v28b
 # Klavye düzenini yükleme (Türkçe Q)
 loadkeys trq
 
-# UEFI ya da BIOS kontrolü
-if [ -d /sys/firmware/efi ]; then
-    echo "UEFI sistemi tespit edildi. UEFI kurulumu başlatılıyor..."
-    BOOT_MODE="UEFI"
-else
-    echo "MBR (BIOS) sistemi tespit edildi. BIOS kurulumu başlatılıyor..."
-    BOOT_MODE="BIOS"
+# UEFI kontrolü
+if [ ! -d /sys/firmware/efi ]; then
+    echo "Bu script sadece UEFI sistemler için geçerlidir. MBR sistemi tespit edildi, çıkılıyor..."
+    exit 1
 fi
 
 # VirtualBox ortamında olup olmadığını kontrol etme
@@ -95,18 +92,9 @@ if [ "$FIX_PARTITIONS" == "y" ]; then
     sgdisk -o "$DISK"  # Bu komut otomatik olarak yeni GPT tablosu oluşturur.
 fi
 
-# UEFI ya da BIOS moduna göre bölümlendirme
-if [ "$BOOT_MODE" == "UEFI" ]; then
-    # UEFI sistemde EFI ve root bölümleri oluşturma
-    sgdisk -n 1:0:+512M -t 1:EF00 "$DISK"  # 512MB EFI bölümünü oluşturma
-    sgdisk -n 2:0:0 -t 2:8300 "$DISK"  # Kalan alanı root (Linux) bölümü olarak ayarlama
-else
-    # BIOS sistemde MBR kullanarak bölümlendirme
-    parted "$DISK" mklabel msdos
-    parted "$DISK" mkpart primary ext4 1MiB 512MiB  # 512MB boot bölümü
-    parted "$DISK" set 1 boot on  # Boot flag ekle
-    parted "$DISK" mkpart primary ext4 512MiB 100%  # Kalan alanı root olarak ayarla
-fi
+# UEFI sistemde EFI ve root bölümleri oluşturma
+sgdisk -n 1:0:+512M -t 1:EF00 "$DISK"  # 512MB EFI bölümünü oluşturma
+sgdisk -n 2:0:0 -t 2:8300 "$DISK"  # Kalan alanı root (Linux) bölümü olarak ayarlama
 
 # Bölümleri tarama
 partprobe "$DISK"
@@ -115,18 +103,12 @@ partprobe "$DISK"
 wipefs -a "${DISK}2"  # Tüm dosya sistemi imzalarını kaldır
 
 # Eğer wipefs yeterli olmazsa, dd ile sıfırlayabilirsiniz
-dd if=/dev/zero of="${DISK}2" bs=1M count=200  # İlk 200MB'yi sıfırlama (daha derin temizlik)
+dd if=/dev/zero of="${DISK}2" bs=1M count=100  # İlk 100MB'yi sıfırlama (daha derin temizlik)
 
 # Bölümleri formatlama
-if [ "$BOOT_MODE" == "UEFI" ]; then
-    mkfs.fat -F32 -n ESP "${DISK}1"
-    cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
-    cryptsetup luksOpen "${DISK}2" cryptlvm
-else
-    mkfs.ext4 -F "${DISK}2"  # Root bölümünü force bayrağıyla formatla
-    cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
-    cryptsetup luksOpen "${DISK}2" cryptlvm
-fi
+mkfs.fat -F32 -n ESP "${DISK}1"
+cryptsetup -s 512 -h sha512 -i 5000 luksFormat "${DISK}2"
+cryptsetup luksOpen "${DISK}2" cryptlvm
 
 # LVM oluşturma
 pvcreate /dev/mapper/cryptlvm
@@ -144,12 +126,8 @@ mkswap -L SWAP /dev/vg/swap
 
 # Dosya sistemlerini bağlama ve swap'ı etkinleştirme
 mount /dev/vg/root /mnt
-if [ "$BOOT_MODE" == "UEFI" ]; then
-    mkdir /mnt/efi
-    mount "${DISK}1" /mnt/efi
-else
-    mount "${DISK}1" /mnt/boot
-fi
+mkdir /mnt/efi
+mount "${DISK}1" /mnt/efi
 swapon /dev/vg/swap
 
 # Reflector kontrolü ve kurulumu
@@ -161,7 +139,7 @@ fi
 # Reflector ile en hızlı mirrorları bulma ve kaydetme
 reflector --verbose --country 'Germany' -l 5 --sort rate --save /etc/pacman.d/mirrorlist
 
-# Sistemi kurma (Almanya için)
+# Sistemi kurma
 pacstrap -K /mnt base base-devel linux-zen linux-zen-firmware intel-ucode cryptsetup lvm2 vim git iwd sbctl
 
 # fstab oluşturma
@@ -253,12 +231,7 @@ sbctl sign -s /efi/EFI/Linux/arch-linux-zen.efi
 sbctl sign -s /efi/EFI/Linux/arch-linux-zen-fallback.efi
 
 # Boot loader kurulumu
-if [ "$BOOT_MODE" == "UEFI" ]; then
-    bootctl install --esp-path=/efi
-else
-    grub-install --target=i386-pc --recheck "$DISK"
-    grub-mkconfig -o /boot/grub/grub.cfg
-fi
+bootctl install --esp-path=/efi
 
 # Çıkış ve disk senkronizasyonu
 exit
