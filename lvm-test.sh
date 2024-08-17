@@ -83,12 +83,12 @@ read -r FIX_PARTITIONS
 if [ "$FIX_PARTITIONS" == "y" ]; then
     sgdisk -Z "$DISK"
     echo "Geçersiz GPT ve MBR tabloları temizlendi. Yeni bir GPT tablosu oluşturuluyor..."
-    gdisk "$DISK"
+    sgdisk -o "$DISK"  # Bu komut otomatik olarak yeni GPT tablosu oluşturur.
 fi
 
 # Disk bölümlendirme ve formatlama (UEFI)
 sgdisk -Z "$DISK"
-gdisk "$DISK"
+sgdisk -o "$DISK"
 partprobe -s "$DISK"
 
 # Disk bölümleri formatlama
