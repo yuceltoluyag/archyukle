@@ -112,7 +112,10 @@ fi
 partprobe "$DISK"
 
 # Bölümü temizleme ve şifrelemeye hazırlama
-wipefs -a "${DISK}2"
+wipefs -a "${DISK}2"  # Tüm dosya sistemi imzalarını kaldır
+
+# Eğer wipefs yeterli olmazsa, dd ile sıfırlayabilirsiniz (opsiyonel)
+dd if=/dev/zero of="${DISK}2" bs=1M count=100  # İlk 100MB'yi sıfırlama
 
 # Bölümleri formatlama
 if [ "$BOOT_MODE" == "UEFI" ]; then
