@@ -83,7 +83,7 @@ EOF
         iwctl station "$interface" connect "$ssid"
     elif [ "$CONNECTION_TYPE" == "2" ]; then
         interface=$(ip link | awk -F: '/enp/{print $2}' | head -n 1 | xargs)
-        if [ -z "$interface" ]; then
+        if [ -z "$interface" ];then
             error "Ethernet arayüzü bulunamadı!"
             exit 1
         fi
@@ -158,14 +158,14 @@ fi
 
 # EFI bölümü FAT32 olarak biçimlendirme
 info "EFI bölümü FAT32 olarak biçimlendiriliyor."
-if ! mkfs.fat -F 32 "$ESP" &>/dev/null; then
+if ! mkfs.fat -F 32 "$ESP" &>/dev/null;then
     error "EFI bölümü FAT32 olarak biçimlendirilemedi. Çıkılıyor."
     exit 1
 fi
 
 # Root bölümünü BTRFS olarak biçimlendirme
 info "Root bölümü BTRFS olarak biçimlendiriliyor."
-if ! mkfs.btrfs -f "$ARCH" &>/dev/null; then
+if ! mkfs.btrfs -f "$ARCH" &>/dev/null;then
     error "Root bölümü BTRFS olarak biçimlendirilemedi. Çıkılıyor."
     exit 1
 fi
@@ -174,8 +174,8 @@ mount "$ARCH" /mnt
 # BTRFS alt hacimlerinin oluşturulması
 info "BTRFS alt hacimleri oluşturuluyor."
 subvols=(snapshots var_pkgs var_log home)
-for subvol in '' "${subvols[@]}"; do
-  if ! btrfs su cr /mnt/@"$subvol" &>/dev/null; then
+for subvol in '' "${subvols[@]}";do
+  if ! btrfs su cr /mnt/@"$subvol" &>/dev/null;then
     error "Alt hacim $subvol oluşturulamadı. Çıkılıyor."
     exit 1
   fi
@@ -185,13 +185,13 @@ done
 umount /mnt
 info "Yeni oluşturulan alt hacimler monte ediliyor."
 mountopts="ssd,noatime,compress-force=zstd:3,discard=async"
-if ! mount -o "$mountopts",subvol=@ "$ARCH" /mnt; then
+if ! mount -o "$mountopts",subvol=@ "$ARCH" /mnt;then
     error "Root alt hacmi monte edilemedi. Çıkılıyor."
     exit 1
 fi
 mkdir -p /mnt/{home,.snapshots,var/{log,cache/pacman/pkg},boot/efi}
-for subvol in "${subvols[@]:2}"; do
-  if ! mount -o "$mountopts",subvol=@"$subvol" "$ARCH" /mnt/"${subvol//_//}"; then
+for subvol in "${subvols[@]:2}";do
+  if ! mount -o "$mountopts",subvol=@"$subvol" "$ARCH" /mnt/"${subvol//_//}";then
     error "Alt hacim $subvol monte edilemedi. Çıkılıyor."
     exit 1
   fi
@@ -199,7 +199,7 @@ done
 mount -o "$mountopts",subvol=@snapshots "$ARCH" /mnt/.snapshots
 mount -o "$mountopts",subvol=@var_pkgs "$ARCH" /mnt/var/cache/pacman/pkg
 chattr +C /mnt/var/log
-if ! mount "$ESP" /mnt/boot/efi/; then
+if ! mount "$ESP" /mnt/boot/efi/;then
     error "EFI bölümü monte edilemedi. Çıkılıyor."
     exit 1
 fi
@@ -226,7 +226,7 @@ cat <<HOSTS > /etc/hosts
 HOSTS
 
 # Ağ yapılandırması (Bağlantı türüne göre)
-if [ "$CONNECTION_TYPE" == "1" ]; then
+if [ "$CONNECTION_TYPE" == "1" ];then
     cat <<NETWORK > /etc/systemd/network/wifi.network
 [Match]
 Name=$interface
@@ -305,7 +305,7 @@ services=(
   btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer
   grub-btrfsd.service systemd-oomd
 )
-for service in "\${services[@]}"; do
+for service in "\${services[@]}";do
   systemctl enable "\$service"
 done
 
@@ -325,6 +325,25 @@ Description = Backing up /boot...
 When = PostTransaction
 Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
 BOOTBACKUP
+
+# Root şifresinin ayarlanması
+echo -e "${CYAN}Root şifresini belirleyin:${RESET}"
+passwd
+
+# Kullanıcı oluşturma ve sudo yetkisi verme
+echo -e "${CYAN}Yeni bir kullanıcı adı girin:${RESET}"
+read -r username
+useradd -m -G wheel -s /bin/bash "\$username"
+echo -e "${CYAN}Kullanıcı şifresini belirleyin:${RESET}"
+passwd "\$username"
+sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /etc/sudoers
+
+# Eksik firmware dosyalarının yüklenmesi
+info "Gerekli firmware dosyaları yükleniyor..."
+pacman -S --noconfirm linux-firmware
+
+# Konsol fontu ayarlama (opsiyonel)
+echo "FONT=ter-v28b" > /etc/vconsole.conf
 
 EOF
 
