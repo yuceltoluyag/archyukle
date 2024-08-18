@@ -1,256 +1,337 @@
 #!/bin/bash
 
-# Terminus fontunu yükleme ve ayarlama (ilk işlem olarak)
-echo "Terminus fontu yükleniyor..."
-sudo pacman -S --noconfirm terminus-font
-setfont ter-v28b
+set -e  # Herhangi bir komut başarısız olursa scripti sonlandır
 
-# Klavye düzenini yükleme (Türkçe Q)
-loadkeys trq
+# Çıktıları renklendirmek için renk tanımları
+GREEN="\e[32m"
+YELLOW="\e[33m"
+RED="\e[31m"
+BLUE="\e[34m"
+CYAN="\e[36m"
+RESET="\e[0m"
 
-# UEFI kontrolü
-if [ ! -d /sys/firmware/efi ]; then
-    echo "Bu script sadece UEFI sistemler için geçerlidir. Çıkılıyor..."
+# Daha iyi okunabilirlik için çıktı fonksiyonları
+info() {
+    echo -e "${BLUE}[BİLGİ]${RESET} $1"
+}
+
+success() {
+    echo -e "${GREEN}[BAŞARILI]${RESET} $1"
+}
+
+warning() {
+    echo -e "${YELLOW}[UYARI]${RESET} $1"
+}
+
+error() {
+    echo -e "${RED}[HATA]${RESET} $1" >&2
+}
+
+input() {
+    echo -e "${CYAN}[GİRİŞ]${RESET} $1"
+}
+
+# Scriptin root olarak çalıştırıldığından emin ol
+if [ "$(id -u)" -ne 0 ]; then
+    error "Bu scripti root olarak çalıştırmalısınız!"
     exit 1
 fi
 
-# VirtualBox ortamında olup olmadığını kontrol etme
+# Türkçe Q klavye düzenini yükle
+loadkeys trq
+
+# UEFI sistem kontrolü
+if [ ! -d /sys/firmware/efi ]; then
+    error "Bu script sadece UEFI sistemler için geçerlidir. Çıkılıyor..."
+    exit 1
+fi
+
+# Terminus fontunu yükle ve ayarla
+info "Terminus fontu yükleniyor..."
+pacman -S --noconfirm terminus-font
+setfont ter-v28b
+
+# Scriptin VirtualBox ortamında çalışıp çalışmadığını kontrol et ve bağlantı türünü belirle
 if grep -q "VirtualBox" /sys/class/dmi/id/product_name; then
-    echo "VirtualBox ortamı tespit edildi, Ethernet ile devam ediliyor..."
+    info "VirtualBox tespit edildi, Ethernet bağlantısı seçiliyor..."
     CONNECTION_TYPE="2"
 else
-    # Kullanıcıya bağlantı türünü sorma
-    echo "Bağlantı türünü seçin:"
+    # Kullanıcıdan bağlantı türünü seçmesini iste
+    echo -e "${CYAN}Bağlantı türünü seçin:${RESET}"
     echo "1) Wi-Fi"
     echo "2) Ethernet"
     read -r CONNECTION_TYPE
 fi
 
-if [ "$CONNECTION_TYPE" == "1" ]; then
-    # Wi-Fi arayüzü tespit etme
-    INTERFACE=$(iw dev | awk '$1=="Interface"{print $2}')
-
-    if [ -z "$INTERFACE" ]; then
-        echo "Wi-Fi arayüzü bulunamadı! VirtualBox veya fiziksel cihazda çalıştığınızdan emin olun."
-        exit 1
-    fi
-
-    # Wi-Fi engellemesini kaldırma
-    rfkill unblock wifi
-
-    # Wi-Fi arayüzünü etkinleştirme
-    ip link set "$INTERFACE" up
-
-    # Wi-Fi ağına bağlanma
-    iwctl <<EOF
-      station $INTERFACE scan
-      station $INTERFACE get-networks
-      echo "Bağlanmak istediğiniz ağın ismini girin (SSID):"
-      read -r SSID
-      station $INTERFACE connect $SSID
-      exit
+# Seçilen bağlantı türüne göre ağ yapılandırmasını ayarla
+setup_network() {
+    local interface
+    if [ "$CONNECTION_TYPE" == "1" ]; then
+        interface=$(iw dev | awk '$1=="Interface"{print $2}')
+        if [ -z "$interface" ]; then
+            error "Wi-Fi arayüzü bulunamadı! VirtualBox veya uygun donanımda çalıştığınızdan emin olun."
+            exit 1
+        fi
+        rfkill unblock wifi
+        ip link set "$interface" up
+        iwctl <<EOF
+        station $interface scan
+        station $interface get-networks
 EOF
-
-elif [ "$CONNECTION_TYPE" == "2" ]; then
-    # Ethernet arayüzü tespit etme (enp0s3 gibi)
-    INTERFACE=$(ip link | awk -F: '/enp/{print $2}' | head -n 1 | xargs)
-
-    if [ -z "$INTERFACE" ]; then
-        echo "Ethernet arayüzü bulunamadı!"
+        echo -e "${CYAN}Bağlanmak istediğiniz ağın ismini girin (SSID):${RESET}"
+        read -r ssid
+        iwctl station "$interface" connect "$ssid"
+    elif [ "$CONNECTION_TYPE" == "2" ]; then
+        interface=$(ip link | awk -F: '/enp/{print $2}' | head -n 1 | xargs)
+        if [ -z "$interface" ]; then
+            error "Ethernet arayüzü bulunamadı!"
+            exit 1
+        fi
+        ip link set "$interface" up
+        dhclient "$interface"
+    else
+        error "Geçersiz seçim! Lütfen 1 veya 2'yi seçin."
         exit 1
     fi
+}
 
-    # Ethernet arayüzünü etkinleştirme
-    ip link set "$INTERFACE" up
+setup_network
 
-    # DHCP ile IP adresi alma
-    dhclient "$INTERFACE"
-else
-    echo "Geçersiz seçim! Lütfen 1 veya 2'yi seçin."
+# Disk seçimi
+info "Mevcut diskler:"
+lsblk -d -n -o NAME,SIZE,MODEL
+input "Kurulum yapmak istediğiniz diski seçin (örnek: /dev/sda): "
+read -r DISK
+
+# Disk seçilmemişse çık
+if [ -z "$DISK" ]; then
+    error "Geçerli bir disk seçilmedi. Çıkılıyor."
     exit 1
 fi
 
-# Bağlantıyı test etme
-ping -c3 gnu.org
-
-# Mevcut diskleri gösterme
-echo "Mevcut diskler:"
-lsblk -o NAME,SIZE,TYPE,MOUNTPOINT
-
-# Kurulum diskini belirleme
-echo "Kurulum diskinizi belirleyin (örneğin /dev/sda):"
-read -r DISK
-
-# Diskteki verileri güvenli şekilde silme
-shred -v -n1 "$DISK"
-
-# GPT Partition tablosu oluşturma
-gdisk "$DISK" <<EOF
-o
-y
-n
-1
-
-+512M
-ef00
-n
-2
-
-
-8e00
-w
-y
-EOF
-
-# Bölümleri tarama
-partprobe "$DISK"
-
-# EFI ve root bölümleri oluşturma
-mkfs.fat -F32 "${DISK}1"
-
-# Şifreleme modülü yükleme
-modprobe dm-crypt
-
-# Root bölümünü şifreleme
-cryptsetup luksFormat "${DISK}2"
-cryptsetup open --type luks "${DISK}2" cryptlvm
-
-# LVM yapılandırma
-pvcreate /dev/mapper/cryptlvm
-vgcreate volume /dev/mapper/cryptlvm
-lvcreate -L2G volume -n swap  # Swap alanı 2GB olarak ayarlandı
-lvcreate -L40G volume -n root
-lvcreate -l 100%FREE volume -n home
-
-# Dosya sistemlerini oluşturma
-mkfs.ext4 /dev/volume/root
-mkfs.ext4 /dev/volume/home
-mkswap /dev/volume/swap
-
-# Dosya sistemlerini bağlama ve swap'ı etkinleştirme
-mount /dev/volume/root /mnt
-mkdir /mnt/home
-mkdir /mnt/boot
-mount /dev/volume/home /mnt/home
-mount "${DISK}1" /mnt/boot
-swapon /dev/volume/swap
-
-# Reflector kontrolü ve kurulumu
-if ! command -v reflector &> /dev/null; then
-    echo "Reflector yüklü değil. Yükleniyor..."
-    pacman -S --noconfirm reflector
+# Diskin temizlenmesi için çift onay
+input "Bu işlem $DISK üzerindeki mevcut bölüm tablosunu silecek. Onaylıyor musunuz [y/N]?: "
+read -r disk_response
+if ! [[ "${disk_response,,}" =~ ^(yes|y)$ ]]; then
+    error "İşlem iptal edildi."
+    exit 1
 fi
 
-# Reflector ile en hızlı mirrorları bulma ve kaydetme
-reflector --verbose --country 'Germany' -l 5 --sort rate --save /etc/pacman.d/mirrorlist
+input "Bu işlem $DISK üzerindeki tüm verileri silecek. Devam etmek istediğinizden emin misiniz [yes/NO]?: "
+read -r final_confirmation
+if ! [[ "${final_confirmation,,}" =~ ^(yes|y)$ ]]; then
+    error "Disk temizleme işlemi iptal edildi."
+    exit 1
+fi
 
-# Sistemi kurma
-pacstrap /mnt base base-devel linux linux-firmware lvm2 vim git
+# Disk temizleme ve bölüm oluşturma işlemleri
+info "Disk $DISK temizleniyor."
+if ! wipefs -af "$DISK" &>/dev/null; then
+    error "Disk temizleme başarısız oldu. Çıkılıyor."
+    exit 1
+fi
 
-# fstab oluşturma
+if ! sgdisk -Zo "$DISK" &>/dev/null; then
+    error "Yeni GPT bölüm tablosu oluşturma başarısız oldu. Çıkılıyor."
+    exit 1
+fi
+
+# Yeni bölüm düzeni oluşturma
+info "$DISK üzerinde bölümler oluşturuluyor."
+if ! parted -s "$DISK" mklabel gpt \
+  mkpart ESP fat32 1MiB 1025MiB \
+  set 1 esp on \
+  mkpart ARCH 1025MiB 100%; then
+  error "Bölüm oluşturma başarısız oldu. Çıkılıyor."
+  exit 1
+fi
+
+ESP="/dev/disk/by-partlabel/ESP"
+ARCH="/dev/disk/by-partlabel/ARCH"
+
+# Kernel’e değişikliklerin bildirilmesi
+info "Kernel'e disk değişiklikleri bildiriliyor."
+if ! partprobe "$DISK"; then
+    error "Kernel'e disk değişiklikleri bildirilemedi. Çıkılıyor."
+    exit 1
+fi
+
+# EFI bölümü FAT32 olarak biçimlendirme
+info "EFI bölümü FAT32 olarak biçimlendiriliyor."
+if ! mkfs.fat -F 32 "$ESP" &>/dev/null; then
+    error "EFI bölümü FAT32 olarak biçimlendirilemedi. Çıkılıyor."
+    exit 1
+fi
+
+# Root bölümünü BTRFS olarak biçimlendirme
+info "Root bölümü BTRFS olarak biçimlendiriliyor."
+if ! mkfs.btrfs -f "$ARCH" &>/dev/null; then
+    error "Root bölümü BTRFS olarak biçimlendirilemedi. Çıkılıyor."
+    exit 1
+fi
+mount "$ARCH" /mnt
+
+# BTRFS alt hacimlerinin oluşturulması
+info "BTRFS alt hacimleri oluşturuluyor."
+subvols=(snapshots var_pkgs var_log home)
+for subvol in '' "${subvols[@]}"; do
+  if ! btrfs su cr /mnt/@"$subvol" &>/dev/null; then
+    error "Alt hacim $subvol oluşturulamadı. Çıkılıyor."
+    exit 1
+  fi
+done
+
+# Yeni oluşturulan alt hacimlerin montajı
+umount /mnt
+info "Yeni oluşturulan alt hacimler monte ediliyor."
+mountopts="ssd,noatime,compress-force=zstd:3,discard=async"
+if ! mount -o "$mountopts",subvol=@ "$ARCH" /mnt; then
+    error "Root alt hacmi monte edilemedi. Çıkılıyor."
+    exit 1
+fi
+mkdir -p /mnt/{home,.snapshots,var/{log,cache/pacman/pkg},efi}
+for subvol in "${subvols[@]:2}"; do
+  if ! mount -o "$mountopts",subvol=@"$subvol" "$ARCH" /mnt/"${subvol//_//}"; then
+    error "Alt hacim $subvol monte edilemedi. Çıkılıyor."
+    exit 1
+  fi
+done
+mount -o "$mountopts",subvol=@snapshots "$ARCH" /mnt/.snapshots
+mount -o "$mountopts",subvol=@var_pkgs "$ARCH" /mnt/var/cache/pacman/pkg
+chattr +C /mnt/var/log
+if ! mount "$ESP" /mnt/efi/; then
+    error "EFI bölümü monte edilemedi. Çıkılıyor."
+    exit 1
+fi
+
+# fstab dosyasının oluşturulması
+info "fstab dosyası oluşturuluyor."
 genfstab -U /mnt >> /mnt/etc/fstab
 
-# Sistemi yapılandırmak için chroot ortamına girme
-arch-chroot /mnt bash <<CHROOT
+# Chroot İçine Geçiş ve Sistem Ayarları
+arch-chroot /mnt /bin/bash -e <<EOF
 
-# Saat dilimini ayarlama
-ln -sf /usr/share/zoneinfo/Europe/Istanbul /etc/localtime
-hwclock --systohc
-
-# Dil ayarlarını yapılandırma
-sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
-locale-gen
-echo "LANG=en_US.UTF-8" > /etc/locale.conf
-echo "LC_COLLATE=C" >> /etc/locale.conf
-
-# Kullanıcı ekleme ve gruplara dahil etme
-echo "Kullanıcı adınızı girin:"
-read -r USERNAME
-useradd -mG wheel "$USERNAME"
-echo "Kullanıcı için şifre oluşturun:"
-passwd "$USERNAME"
-echo "Root için şifre oluşturun:"
-passwd
-
-# Visudo yapılandırması
-sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
-
-# Ağ yapılandırması
-echo "Hostname belirleyin:"
-read -r HOSTNAME
-echo "$HOSTNAME" > /etc/hostname
-cat <<EOL > /etc/hosts
+# Hostname ve Ağ Yapılandırması
+echo -e "${CYAN}Hostname belirleyin:${RESET}"
+read -r hostname
+echo "\$hostname" > /etc/hostname
+cat <<HOSTS > /etc/hosts
 127.0.0.1   localhost
 ::1         localhost
-127.0.1.1   $HOSTNAME.localdomain $HOSTNAME
-EOL
+127.0.1.1   \$hostname.localdomain \$hostname
+HOSTS
 
-systemctl enable iwd systemd-networkd systemd-resolved systemd-timesyncd
-rm /etc/resolv.conf
-ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-
-# Ağ ayarları yapılandırması
+# Ağ yapılandırması (Bağlantı türüne göre)
 if [ "$CONNECTION_TYPE" == "1" ]; then
-    cat <<EOL > /etc/systemd/network/wifi.network
+    cat <<NETWORK > /etc/systemd/network/wifi.network
 [Match]
-Name=$INTERFACE
+Name=$interface
 [Network]
 DHCP=yes
 IPv6PrivacyExtensions=true
-EOL
+NETWORK
 else
-    cat <<EOL > /etc/systemd/network/ethernet.network
+    cat <<NETWORK > /etc/systemd/network/ethernet.network
 [Match]
-Name=$INTERFACE
+Name=$interface
 [Network]
 DHCP=yes
 IPv6PrivacyExtensions=true
-EOL
+NETWORK
 fi
 
-cat <<EOL > /etc/systemd/resolved.conf
+# DNS ayarları
+cat <<RESOLVED > /etc/systemd/resolved.conf
 DNS=1.1.1.1#cloudflare-dns.com 1.0.0.1#cloudflare-dns.com
 FallbackDNS=9.9.9.9#dns.quad9.net 149.112.112.112#dns.quad9.net
 DNSSEC=yes
 DNSOverTLS=yes
 MulticastDNS=no
-EOL
+RESOLVED
 
-# Zaman sunucusu ayarları (İstanbul için)
+# Zaman senkronizasyonu
 mkdir -p /etc/systemd/timesyncd.conf.d
-cat <<EOL > /etc/systemd/timesyncd.conf.d/local.conf
+cat <<TIMESYNC > /etc/systemd/timesyncd.conf.d/local.conf
 [Time]
 NTP=0.tr.pool.ntp.org 1.tr.pool.ntp.org 2.tr.pool.ntp.org 3.tr.pool.ntp.org
 FallbackNTP=0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.pool.ntp.org
-EOL
+TIMESYNC
 
-# mkinitcpio yapılandırması
-sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap modconf block encrypt lvm2 filesystems fsck)/' /etc/mkinitcpio.conf
+# Zaman Dilimi ve Saat Ayarları
+ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
+hwclock --systohc
+
+# Dil Ayarları
+locale-gen
+
+# initramfs Oluşturulması
 mkinitcpio -P
 
-# Boot loader kurulumu
-bootctl install --esp-path=/boot
+# Snapper Yapılandırması (Btrfs için)
+umount /.snapshots
+rm -r /.snapshots
+snapper --no-dbus -c root create-config /
+btrfs subvolume delete /.snapshots
+mkdir /.snapshots
+mount -a
+chmod 750 /.snapshots
 
-# Boot loader konfigürasyonu
-cat <<EOL > /boot/loader/loader.conf
-default arch
-timeout 3
-editor 0
-EOL
+# PC Speaker Devre Dışı Bırakılması (Beep Sesi Kapatma)
+echo -e "blacklist pcspkr\nblacklist snd_pcsp" > /etc/modprobe.d/nobeep.conf
 
-# Boot entry oluşturma
-UUID=$(blkid -s UUID -o value "${DISK}2")
-cat <<EOL > /boot/loader/entries/arch.conf
-title Arch Linux
-linux /vmlinuz-linux
-initrd /initramfs-linux.img
-options cryptdevice=UUID=$UUID:cryptlvm root=/dev/volume/root quiet rw
-EOL
+# GRUB Kurulumu ve Yapılandırması
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+grub-mkconfig -o /boot/grub/grub.cfg
 
-# Çıkış ve disk senkronizasyonu
-exit
-sync
-poweroff
-CHROOT
+# Reflector Yapılandırması (Son 5 Almanya Yansıması)
+mv /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
+reflector -l 5 -c "Germany" -p https --sort rate --save /etc/pacman.d/mirrorlist
+cat <<REFLECTOR > /etc/xdg/reflector/reflector.conf
+--latest 5
+--country Germany
+--protocol https
+--sort rate
+--save /etc/pacman.d/mirrorlist
+REFLECTOR
 
-echo "Kurulum tamamlandı. Sistemi yeniden başlatabilirsiniz."
+# Pacman Ayarları (Paralel İndirme ve Renkli Çıktı)
+sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /etc/pacman.conf
+
+# Gerekli Hizmetlerin Etkinleştirilmesi
+services=(
+  reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer
+  btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer
+  grub-btrfsd.service systemd-oomd
+)
+for service in "\${services[@]}"; do
+  systemctl enable "\$service"
+done
+
+# Pacman Hook Yapılandırması (/boot Yedeği İçin)
+mkdir -p /etc/pacman.d/hooks
+cat <<BOOTBACKUP > /etc/pacman.d/hooks/50-bootbackup.hook
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Depends = rsync
+Description = Backing up /boot...
+When = PostTransaction
+Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
+BOOTBACKUP
+
+# Son Doğrulama
+if ! grep -q "/" /etc/fstab; then
+  error "Fstab eksik görünüyor. Lütfen gözden geçirin."
+fi
+
+EOF
+
+# Tüm bölümleri kaldır ve scripti sonlandır
+umount -R /mnt
+
+success "Kurulum tamamlandı! Şimdi sistemi yeniden başlatabilirsiniz."
