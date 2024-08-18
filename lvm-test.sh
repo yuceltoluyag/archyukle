@@ -68,7 +68,7 @@ setup_network() {
     local interface
     if [ "$CONNECTION_TYPE" == "1" ]; then
         interface=$(iw dev | awk '$1=="Interface"{print $2}')
-        if [ -z "$interface" ];then
+        if [ -z "$interface" ]; then
             error "Wi-Fi arayüzü bulunamadı! VirtualBox veya uygun donanımda çalıştığınızdan emin olun."
             exit 1
         fi
@@ -83,7 +83,7 @@ EOF
         iwctl station "$interface" connect "$ssid"
     elif [ "$CONNECTION_TYPE" == "2" ]; then
         interface=$(ip link | awk -F: '/enp/{print $2}' | head -n 1 | xargs)
-        if [ -z "$interface" ];then
+        if [ -z "$interface" ]; then
             error "Ethernet arayüzü bulunamadı!"
             exit 1
         fi
@@ -158,14 +158,14 @@ fi
 
 # EFI bölümü FAT32 olarak biçimlendirme
 info "EFI bölümü FAT32 olarak biçimlendiriliyor."
-if ! mkfs.fat -F 32 "$ESP" &>/dev/null;then
+if ! mkfs.fat -F 32 "$ESP" &>/dev/null; then
     error "EFI bölümü FAT32 olarak biçimlendirilemedi. Çıkılıyor."
     exit 1
 fi
 
 # Root bölümünü BTRFS olarak biçimlendirme
 info "Root bölümü BTRFS olarak biçimlendiriliyor."
-if ! mkfs.btrfs -f "$ARCH" &>/dev/null;then
+if ! mkfs.btrfs -f "$ARCH" &>/dev/null; then
     error "Root bölümü BTRFS olarak biçimlendirilemedi. Çıkılıyor."
     exit 1
 fi
@@ -174,8 +174,8 @@ mount "$ARCH" /mnt
 # BTRFS alt hacimlerinin oluşturulması
 info "BTRFS alt hacimleri oluşturuluyor."
 subvols=(snapshots var_pkgs var_log home)
-for subvol in '' "${subvols[@]}";do
-  if ! btrfs su cr /mnt/@"$subvol" &>/dev/null;then
+for subvol in '' "${subvols[@]}"; do
+  if ! btrfs su cr /mnt/@"$subvol" &>/dev/null; then
     error "Alt hacim $subvol oluşturulamadı. Çıkılıyor."
     exit 1
   fi
@@ -185,13 +185,13 @@ done
 umount /mnt
 info "Yeni oluşturulan alt hacimler monte ediliyor."
 mountopts="ssd,noatime,compress-force=zstd:3,discard=async"
-if ! mount -o "$mountopts",subvol=@ "$ARCH" /mnt;then
+if ! mount -o "$mountopts",subvol=@ "$ARCH" /mnt; then
     error "Root alt hacmi monte edilemedi. Çıkılıyor."
     exit 1
 fi
 mkdir -p /mnt/{home,.snapshots,var/{log,cache/pacman/pkg},boot/efi}
-for subvol in "${subvols[@]:2}";do
-  if ! mount -o "$mountopts",subvol=@"$subvol" "$ARCH" /mnt/"${subvol//_//}";then
+for subvol in "${subvols[@]:2}"; do
+  if ! mount -o "$mountopts",subvol=@"$subvol" "$ARCH" /mnt/"${subvol//_//}"; then
     error "Alt hacim $subvol monte edilemedi. Çıkılıyor."
     exit 1
   fi
@@ -199,14 +199,14 @@ done
 mount -o "$mountopts",subvol=@snapshots "$ARCH" /mnt/.snapshots
 mount -o "$mountopts",subvol=@var_pkgs "$ARCH" /mnt/var/cache/pacman/pkg
 chattr +C /mnt/var/log
-if ! mount "$ESP" /mnt/boot/efi/;then
+if ! mount "$ESP" /mnt/boot/efi/; then
     error "EFI bölümü monte edilemedi. Çıkılıyor."
     exit 1
 fi
 
 # Temel Sistem Kurulumu
 info "Temel sistem kurulumu yapılıyor."
-pacstrap /mnt base linux linux-firmware
+pacstrap /mnt base base-devel linux linux-firmware linux-headers linux-firmware intel-ucode btrfs-progs grub grub-btrfs rsync efibootmgr reflector snapper snap-pac zram-generator sudo git nano vim pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber bluez bluez-utils
 
 # fstab dosyasının oluşturulması
 info "fstab dosyası oluşturuluyor."
@@ -226,7 +226,7 @@ cat <<HOSTS > /etc/hosts
 HOSTS
 
 # Ağ yapılandırması (Bağlantı türüne göre)
-if [ "$CONNECTION_TYPE" == "1" ];then
+if [ "$CONNECTION_TYPE" == "1" ]; then
     cat <<NETWORK > /etc/systemd/network/wifi.network
 [Match]
 Name=$interface
@@ -299,33 +299,6 @@ REFLECTOR
 # Pacman Ayarları (Paralel İndirme ve Renkli Çıktı)
 sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /etc/pacman.conf
 
-# Gerekli Hizmetlerin Etkinleştirilmesi
-services=(
-  reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer
-  btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer
-  grub-btrfsd.service systemd-oomd
-)
-for service in "\${services[@]}";do
-  systemctl enable "\$service"
-done
-
-# Pacman Hook Yapılandırması (/boot Yedeği İçin)
-mkdir -p /etc/pacman.d/hooks
-cat <<BOOTBACKUP > /etc/pacman.d/hooks/50-bootbackup.hook
-[Trigger]
-Operation = Upgrade
-Operation = Install
-Operation = Remove
-Type = Path
-Target = usr/lib/modules/*/vmlinuz
-
-[Action]
-Depends = rsync
-Description = Backing up /boot...
-When = PostTransaction
-Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
-BOOTBACKUP
-
 # Root şifresinin ayarlanması
 echo -e "${CYAN}Root şifresini belirleyin:${RESET}"
 passwd
@@ -345,6 +318,15 @@ pacman -S --noconfirm linux-firmware
 # Konsol fontu ayarlama (opsiyonel)
 echo "FONT=ter-v28b" > /etc/vconsole.conf
 
+EOF
+
+# Chroot dışına çıkıldıktan sonra hizmetleri etkinleştirin
+info "Chroot işlemi tamamlandı, gerekli hizmetler etkinleştiriliyor..."
+arch-chroot /mnt /bin/bash <<EOF
+systemctl daemon-reload
+systemctl enable NetworkManager
+systemctl enable systemd-resolved
+systemctl enable reflector.timer
 EOF
 
 # Tüm bölümleri kaldır ve scripti sonlandır
