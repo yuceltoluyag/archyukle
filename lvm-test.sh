@@ -68,7 +68,7 @@ setup_network() {
     local interface
     if [ "$CONNECTION_TYPE" == "1" ]; then
         interface=$(iw dev | awk '$1=="Interface"{print $2}')
-        if [ -z "$interface" ]; then
+        if [ -z "$interface" ];then
             error "Wi-Fi arayüzü bulunamadı! VirtualBox veya uygun donanımda çalıştığınızdan emin olun."
             exit 1
         fi
@@ -139,9 +139,9 @@ fi
 # Yeni bölüm düzeni oluşturma
 info "$DISK üzerinde bölümler oluşturuluyor."
 if ! parted -s "$DISK" mklabel gpt \
-  mkpart ESP fat32 1MiB 1025MiB \
+  mkpart ESP fat32 1MiB 512MiB \
   set 1 esp on \
-  mkpart ARCH 1025MiB 100%; then
+  mkpart ARCH 512MiB 100%; then
   error "Bölüm oluşturma başarısız oldu. Çıkılıyor."
   exit 1
 fi
@@ -189,7 +189,7 @@ if ! mount -o "$mountopts",subvol=@ "$ARCH" /mnt; then
     error "Root alt hacmi monte edilemedi. Çıkılıyor."
     exit 1
 fi
-mkdir -p /mnt/{home,.snapshots,var/{log,cache/pacman/pkg},efi}
+mkdir -p /mnt/{home,.snapshots,var/{log,cache/pacman/pkg},boot/efi}
 for subvol in "${subvols[@]:2}"; do
   if ! mount -o "$mountopts",subvol=@"$subvol" "$ARCH" /mnt/"${subvol//_//}"; then
     error "Alt hacim $subvol monte edilemedi. Çıkılıyor."
@@ -199,10 +199,14 @@ done
 mount -o "$mountopts",subvol=@snapshots "$ARCH" /mnt/.snapshots
 mount -o "$mountopts",subvol=@var_pkgs "$ARCH" /mnt/var/cache/pacman/pkg
 chattr +C /mnt/var/log
-if ! mount "$ESP" /mnt/efi/; then
+if ! mount "$ESP" /mnt/boot/efi/; then
     error "EFI bölümü monte edilemedi. Çıkılıyor."
     exit 1
 fi
+
+# Temel Sistem Kurulumu
+info "Temel sistem kurulumu yapılıyor."
+pacstrap /mnt base linux linux-firmware
 
 # fstab dosyasının oluşturulması
 info "fstab dosyası oluşturuluyor."
@@ -268,8 +272,6 @@ locale-gen
 mkinitcpio -P
 
 # Snapper Yapılandırması (Btrfs için)
-umount /.snapshots
-rm -r /.snapshots
 snapper --no-dbus -c root create-config /
 btrfs subvolume delete /.snapshots
 mkdir /.snapshots
@@ -323,11 +325,6 @@ Description = Backing up /boot...
 When = PostTransaction
 Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
 BOOTBACKUP
-
-# Son Doğrulama
-if ! grep -q "/" /etc/fstab; then
-  error "Fstab eksik görünüyor. Lütfen gözden geçirin."
-fi
 
 EOF
 
