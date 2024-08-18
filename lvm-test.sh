@@ -272,11 +272,15 @@ locale-gen
 mkinitcpio -P
 
 # Snapper Yapılandırması (Btrfs için)
-snapper --no-dbus -c root create-config /
-btrfs subvolume delete /.snapshots
-mkdir /.snapshots
-mount -a
-chmod 750 /.snapshots
+if ! btrfs subvolume show /mnt/.snapshots &>/dev/null; then
+    snapper --no-dbus -c root create-config /
+    btrfs subvolume delete /.snapshots
+    mkdir /.snapshots
+    mount -a
+    chmod 750 /.snapshots
+else
+    warning ".snapshots alt hacmi zaten var, Snapper yeniden yapılandırılmayacak."
+fi
 
 # PC Speaker Devre Dışı Bırakılması (Beep Sesi Kapatma)
 echo -e "blacklist pcspkr\nblacklist snd_pcsp" > /etc/modprobe.d/nobeep.conf
