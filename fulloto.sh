@@ -3,11 +3,15 @@
 clear
 setfont LatArCyrHeb-19.psfu.gz
 
+LOGFILE="/var/log/arch_install.log"
+exec > >(tee -a $LOGFILE) 2>&1
+
 print () {
-    echo -e "\e[1m\e[93m[ \e[92m•\e[93m ] \e[4m$1\e[0m"
+    echo -e "\e[1m\e[93m[ \e[92m•\e[93m ] \e[4m$1\e[0m" | tee -a $LOGFILE
 }
+
 error() {
-    printf "%s\n" "$1"
+    printf "%s\n" "$1" | tee -a $LOGFILE
     exit 1
 }
 
@@ -25,7 +29,7 @@ show_logo() {
 
 select_disk() {
     PS3="Lütfen diskin numarasını seçin: "
-    select ENTRY in $(lsblk -dpnoNAME|grep -P "/dev/sd|nvme|vd"); do
+    select ENTRY in $(lsblk -dpnoNAME | grep -E "/dev/sd|nvme|vd"); do
         DISK=$ENTRY
         print "Arch Linux'un Kurulacağı Disk: $DISK."
         break
@@ -152,6 +156,9 @@ set_user_and_password() {
         echo
         if [ "$pass" == "$pass_confirm" ]; then
             if echo "$user:$pass" | arch-chroot /mnt chpasswd; then
+                # Sudoers dosyasını düzenle
+                arch-chroot /mnt bash -c "sed -i '/^root ALL=(ALL:ALL) ALL/a ${user} ALL=(ALL:ALL) ALL' /etc/sudoers"
+                arch-chroot /mnt bash -c "sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers"
                 break
             else
                 echo "Şifre belirlenirken bir hata oluştu. Tekrar deneyin."
@@ -168,6 +175,7 @@ set_user_and_password() {
 }
 
 
+
 detect_microcode() {
     local cpu
     cpu=$(grep vendor_id /proc/cpuinfo)
@@ -181,8 +189,10 @@ detect_microcode() {
 }
 
 set_hostname() {
-    local hostname
-    read -r -p "Lütfen ana bilgisayar adını girin: " hostname
+    local hostname=""
+    while [[ -z "$hostname" ]]; do
+        read -r -p "Lütfen ana bilgisayar adını girin (boş bırakılamaz): " hostname
+    done
     echo "$hostname" > /mnt/etc/hostname
     cat > /mnt/etc/hosts <<EOF
 127.0.0.1   localhost
@@ -214,17 +224,21 @@ partition_disk() {
         print "Disk bölme işlemi başlıyor: $disk."
         wipefs -af "$disk"
         sgdisk -Zo "$disk"
+
         if [ -d /sys/firmware/efi/efivars ]; then
+            # UEFI sistemi için GPT ve EFI bölümlemeleri
             parted -s --align optimal "$disk" mklabel gpt
             parted -s --align optimal "$disk" mkpart ESP fat32 1M 513M
             parted -s --align optimal "$disk" set 1 esp on
             parted -s --align optimal "$disk" mkpart primary linux-swap 513M 4G
             parted -s --align optimal "$disk" mkpart primary 4G 100%
         else
+            # BIOS sistemi için MBR bölümlemeleri
             parted -s --align optimal "$disk" mklabel msdos
-            parted -s --align optimal "$disk" mkpart primary 1M 513M
-            parted -s --align optimal "$disk" mkpart primary 513M 4G
-            parted -s --align optimal "$disk" mkpart primary 4G 100%
+            parted -s --align optimal "$disk" mkpart primary ext4 1M 100M
+            parted -s --align optimal "$disk" set 1 boot on
+            parted -s --align optimal "$disk" mkpart primary linux-swap 100M 4G
+            parted -s --align optimal "$disk" mkpart primary ext4 4G 100%
         fi
     else
         error "Disk bölme işlemi iptal edildi."
@@ -234,47 +248,88 @@ partition_disk() {
 format_disk() {
     local disk=$1
     if [[ -d /sys/firmware/efi/efivars ]]; then
-        mkfs.ext4 "${disk}3"
-        mount "${disk}3" /mnt
-        mkfs.fat -F32 "${disk}1"
+        # UEFI sistemi
+        mkfs.fat -F32 "${disk}1"      # EFI System Partition
+        mkfs.ext4 "${disk}3"          # Root partition
         mkdir -p /mnt/boot
         mount "${disk}1" /mnt/boot
+        mount "${disk}3" /mnt
     else
-        mkfs.ext4 "${disk}3"
-        mount "${disk}3" /mnt
-        mkfs.fat -F32 "${disk}1"
+        # BIOS sistemi
+        mkfs.ext4 "${disk}1"          # Boot partition
+        mkfs.ext4 "${disk}3"          # Root partition
         mkdir -p /mnt/boot
         mount "${disk}1" /mnt/boot
+        mount "${disk}3" /mnt
     fi
+    
     mkswap "${disk}2"
     swapon "${disk}2"
 }
 
 
 
+
 run_arch_chroot() {
     local disk=$1
     arch-chroot /mnt /bin/bash -e <<EOF
-    ln -sf /usr/share/zoneinfo/\$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
+    ln -sf /usr/share/zoneinfo/Europe/Istanbul /etc/localtime
     hwclock --systohc
     locale-gen
     mkinitcpio -P
 
     if [ -d /sys/firmware/efi/efivars ]; then
+        # UEFI sistemi için GRUB kurulumu
         grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
     else
-        grub-install --target=i386-pc $disk --recheck --debug
+        # BIOS sistemi için GRUB kurulumu (boot bölümünü belirtiyoruz)
+        grub-install --target=i386-pc ${disk} --boot-directory=/boot --recheck --debug
         echo "GRUB_DISABLE_OS_PROBER=true" > /etc/default/grub
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
 
-    # Bu kısmı kaldırıyoruz
-    # useradd -m -g users -G wheel -s /bin/bash "$username"
-    # echo "${username} ALL=(ALL:ALL) ALL" >> /etc/sudoers
-    # echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers
-    # echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+    # Pacman konfigürasyonunu ayarlıyoruz
+    cat > /etc/pacman.conf <<'EOL'
+#{{{ General options
+    [options]
+    HoldPkg      = pacman glibc
+    CleanMethod  = KeepInstalled
+    Architecture = auto
+#}}}
+
+#{{{ Misc options
+    UseSyslog
+    Color
+    ILoveCandy
+    CheckSpace
+    VerbosePkgLists
+#}}}
+
+#{{{ Trust
+    SigLevel           = Required DatabaseOptional
+    LocalFileSigLevel  = Optional
+    RemoteFileSigLevel = Required
+#}}}
+
+#{{{ Repositories
+    [core]
+    Include = /etc/pacman.d/mirrorlist
+
+    [extra]
+    Include = /etc/pacman.d/mirrorlist
+
+    [community]
+    Include = /etc/pacman.d/mirrorlist
+
+    [multilib]
+    Include = /etc/pacman.d/mirrorlist
+#}}}
+
+# vim:fdm=marker
+EOL
 EOF
 }
+
 
 
 main() {
@@ -291,7 +346,7 @@ main() {
     select_network
 
     print "Temel sistem kuruluyor (biraz zaman alabilir)."
-    pacstrap /mnt --needed base base-devel "$kernel" "$microcode" linux-headers linux-firmware grub rsync efibootmgr reflector man vim nano git sudo
+    pacstrap /mnt --needed base base-devel "$kernel" "$microcode" linux-headers linux-firmware grub rsync efibootmgr reflector man vim nano git sudo || error "Paket yükleme başarısız oldu."
 
     set_hostname
     set_locale
@@ -301,13 +356,13 @@ main() {
     genfstab -U /mnt >> /mnt/etc/fstab
 
     read -r -p "Lütfen bir kullanıcı hesabı için ad girin: " username
+    while [[ -z "$username" ]]; do
+        read -r -p "Kullanıcı adı boş olamaz, lütfen geçerli bir ad girin: " username
+    done
     set_user_and_password "$username"
     set_user_and_password "root"
 
     run_arch_chroot "$DISK"
-
-    print "Pacman'da renk, animasyon ve paralel indirme etkinleştiriliyor."
-    sed -i 's/#Color/Color\nILoveCandy/;s/^#ParallelDownloads.*$/ParallelDownloads = 10/' /mnt/etc/pacman.conf
 
     print "Bitti, şimdi yeniden başlatabilirsiniz (kullanıcı adı ve şifre girdikten sonra paketleri yüklemeyi unutmayın)."
 }
