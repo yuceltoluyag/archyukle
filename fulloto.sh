@@ -370,7 +370,7 @@ main() {
     select_network
 
     print "Temel sistem kuruluyor (biraz zaman alabilir)."
-    pacstrap /mnt --needed base base-devel "$kernel" "$kernel_headers" "$additional_packages" grub rsync efibootmgr reflector man vim nano git sudo || error "Paket yükleme başarısız oldu."
+    pacstrap /mnt --needed base base-devel "$kernel" "$kernel_headers" "$additional_packages" "$microcode" grub rsync efibootmgr reflector man vim nano git sudo || error "Paket yükleme başarısız oldu."
 
     set_hostname
     set_locale
