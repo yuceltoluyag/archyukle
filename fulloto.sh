@@ -68,6 +68,7 @@ detect_virtualization() {
             enable_service "hv_vss_daemon"
             ;;
     esac
+    print "Sanallaştırma durumu kontrol edildi, algılanan: $hypervisor"
 }
 
 install_package() {
@@ -85,18 +86,25 @@ enable_service() {
 select_kernel() {
     print "Hangi Linux Kernelini Yüklemek İstersiniz:"
     print "1) linux:  Varsayılan Linux çekirdeği"
-    print "2) linux-hardened: Güvenlik odaklı bir Linux çekirdeği"
-    print "3) LTS: Uzun vadeli destek (LTS) Linux çekirdeği"
-    print "4) Zen: Masaüstü kullanımı için optimize edilmiş bir Linux çekirdeği"
+    print "2) LTS: Uzun vadeli destek (LTS) Linux çekirdeği"
     read -r -p "İlgili çekirdeğin numarasını girin: " choice
     case $choice in
-        1 ) kernel="linux";;
-        2 ) kernel="linux-hardened";;
-        3 ) kernel="linux-lts";;
-        4 ) kernel="linux-zen";;
-        * ) print "Geçerli bir seçim girmediniz."
+        1 )
+            kernel="linux"
+            kernel_headers="linux-headers"
+            additional_packages="linux-firmware acpi_call-dkms"
+            ;;
+        2 )
+            kernel="linux-lts"
+            kernel_headers="linux-lts-headers"
+            additional_packages="r8168-lts acpi_call-lts"
+            ;;
+        * )
+            print "Geçerli bir seçim yapmadınız."
             select_kernel
+            ;;
     esac
+    print "Kernel seçimi tamamlandı, seçilen kernel: $kernel"
 }
 
 select_network() {
@@ -130,6 +138,7 @@ select_network() {
             print "Geçerli bir seçim yapmadınız."
             select_network
     esac
+    print "Ağ yapılandırması seçimi tamamlandı."
 }
 
 
@@ -143,10 +152,11 @@ set_user_and_password() {
 
     # Kullanıcıyı kontrol et ve varsa sadece şifresini güncelle
     if arch-chroot /mnt id -u "$user" >/dev/null 2>&1; then
-        echo "Kullanıcı $user zaten mevcut. Şifresi güncellenecek."
+        print "Kullanıcı $user zaten mevcut. Şifresi güncellenecek."
     else
         # Kullanıcıyı oluştur
         arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$user"
+        print "Kullanıcı $user oluşturuldu."
     fi
 
     while true; do
@@ -159,6 +169,7 @@ set_user_and_password() {
                 # Sudoers dosyasını düzenle
                 arch-chroot /mnt bash -c "sed -i '/^root ALL=(ALL:ALL) ALL/a ${user} ALL=(ALL:ALL) ALL' /etc/sudoers"
                 arch-chroot /mnt bash -c "sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers"
+                print "Şifre başarıyla ayarlandı ve sudoers dosyası güncellendi."
                 break
             else
                 echo "Şifre belirlenirken bir hata oluştu. Tekrar deneyin."
@@ -186,6 +197,7 @@ detect_microcode() {
         print "Bir Intel CPU algılandı, Intel mikro kodu yüklenecek."
         microcode="intel-ucode"
     fi
+    print "Mikro kod algılama tamamlandı, algılanan: $microcode"
 }
 
 set_hostname() {
@@ -199,6 +211,7 @@ set_hostname() {
 ::1         localhost
 127.0.1.1   $hostname.localdomain   $hostname
 EOF
+    print "Hostname ayarlandı: $hostname"
 }
 
 set_locale() {
@@ -207,6 +220,7 @@ set_locale() {
     locale=${locale:-en_US}
     echo "$locale.UTF-8 UTF-8" > /mnt/etc/locale.gen
     echo "LANG=$locale.UTF-8" > /mnt/etc/locale.conf
+    print "Yerel ayar (locale) ayarlandı: $locale"
 }
 
 set_keyboard_layout() {
@@ -214,6 +228,7 @@ set_keyboard_layout() {
     read -r -p "Lütfen kullandığınız klavye düzenini girin (örneğin trq): " kblayout
     kblayout=${kblayout:-trq}
     echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
+    print "Klavye düzeni ayarlandı: $kblayout"
 }
 
 partition_disk() {
@@ -232,6 +247,7 @@ partition_disk() {
             parted -s --align optimal "$disk" set 1 esp on
             parted -s --align optimal "$disk" mkpart primary linux-swap 513M 4G
             parted -s --align optimal "$disk" mkpart primary 4G 100%
+            print "UEFI sistemi için disk bölümlendirme tamamlandı."
         else
             # BIOS sistemi için MBR bölümlemeleri
             parted -s --align optimal "$disk" mklabel msdos
@@ -239,6 +255,7 @@ partition_disk() {
             parted -s --align optimal "$disk" set 1 boot on
             parted -s --align optimal "$disk" mkpart primary linux-swap 100M 4G
             parted -s --align optimal "$disk" mkpart primary ext4 4G 100%
+            print "BIOS sistemi için disk bölümlendirme tamamlandı."
         fi
     else
         error "Disk bölme işlemi iptal edildi."
@@ -254,6 +271,7 @@ format_disk() {
         mkdir -p /mnt/boot
         mount "${disk}1" /mnt/boot
         mount "${disk}3" /mnt
+        print "UEFI sistemi için disk formatlama ve bağlama tamamlandı."
     else
         # BIOS sistemi
         mkfs.ext4 "${disk}1"          # Boot partition
@@ -261,10 +279,12 @@ format_disk() {
         mkdir -p /mnt/boot
         mount "${disk}1" /mnt/boot
         mount "${disk}3" /mnt
+        print "BIOS sistemi için disk formatlama ve bağlama tamamlandı."
     fi
     
     mkswap "${disk}2"
     swapon "${disk}2"
+    print "Swap alanı ayarlandı ve etkinleştirildi."
 }
 
 
@@ -272,6 +292,7 @@ format_disk() {
 
 run_arch_chroot() {
     local disk=$1
+    print "Chroot işlemi başlıyor..."
     arch-chroot /mnt /bin/bash -e <<EOF
     ln -sf /usr/share/zoneinfo/Europe/Istanbul /etc/localtime
     hwclock --systohc
@@ -287,6 +308,7 @@ run_arch_chroot() {
         echo "GRUB_DISABLE_OS_PROBER=true" > /etc/default/grub
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
+    print "GRUB kurulumu ve yapılandırması tamamlandı."
 
     # Pacman konfigürasyonunu ayarlıyoruz
     cat > /etc/pacman.conf <<'EOL'
@@ -327,7 +349,9 @@ run_arch_chroot() {
 
 # vim:fdm=marker
 EOL
+    print "Pacman yapılandırması tamamlandı."
 EOF
+    print "Chroot işlemi tamamlandı."
 }
 
 
@@ -346,7 +370,7 @@ main() {
     select_network
 
     print "Temel sistem kuruluyor (biraz zaman alabilir)."
-    pacstrap /mnt --needed base base-devel "$kernel" "$microcode" linux-headers linux-firmware grub rsync efibootmgr reflector man vim nano git sudo || error "Paket yükleme başarısız oldu."
+    pacstrap /mnt --needed base base-devel "$kernel" "$kernel_headers" "$additional_packages" grub rsync efibootmgr reflector man vim nano git sudo || error "Paket yükleme başarısız oldu."
 
     set_hostname
     set_locale
@@ -359,6 +383,7 @@ main() {
     while [[ -z "$username" ]]; do
         read -r -p "Kullanıcı adı boş olamaz, lütfen geçerli bir ad girin: " username
     done
+    print "Kullanıcı adı girildi: $username"
     set_user_and_password "$username"
     set_user_and_password "root"
 
