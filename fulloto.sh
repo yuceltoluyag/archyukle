@@ -17,13 +17,13 @@ error() {
 
 show_logo() {
     echo -e "${R}
-                     		      /\\
-				     /  \\    ${G}Yucel Toluyağ${G}
-				    / /\\ \\   ${G}Archlinux İnstaller${G}
-				   / /  \\ \\  ${G}github.com/yuceltoluyag${G}
-				  / /    \\ \\
-				 / / _____\\ \\
-    				/_/  \`----.\\_\\ ${B}"
+                                      /\\
+                                     /  \\    ${G}Yucel Toluyağ${G}
+                                    / /\\ \\   ${G}Archlinux İnstaller${G}
+                                   / /  \\ \\  ${G}github.com/yuceltoluyag${G}
+                                  / /    \\ \\
+                                 / / _____\\ \\
+                                /_/  \`----.\\_\\ ${B}"
     print "Arch Linux kurulum sürecini basitleştirmek için yapılmış bir komut dosyası olan Arcyukle'ye hoş geldiniz."
 }
 
@@ -141,96 +141,6 @@ select_network() {
     print "Ağ yapılandırması seçimi tamamlandı."
 }
 
-
-# Kullanıcıyı oluşturma ve şifre belirleme
-set_user_and_password() {
-    local user=$1
-    local pass
-    local pass_confirm
-    local retry_limit=3
-    local attempts=0
-
-    # Kullanıcıyı kontrol et ve varsa sadece şifresini güncelle
-    if arch-chroot /mnt id -u "$user" >/dev/null 2>&1; then
-        print "Kullanıcı $user zaten mevcut. Şifresi güncellenecek."
-    else
-        # Kullanıcıyı oluştur
-        arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$user"
-        print "Kullanıcı $user oluşturuldu."
-    fi
-
-    while true; do
-        read -r -s -p "$user için bir şifre belirleyin: " pass
-        echo
-        read -r -s -p "Şifreyi tekrar girin: " pass_confirm
-        echo
-        if [ "$pass" == "$pass_confirm" ]; then
-            if echo "$user:$pass" | arch-chroot /mnt chpasswd; then
-                # Sudoers dosyasını düzenle
-                arch-chroot /mnt bash -c "sed -i '/^root ALL=(ALL:ALL) ALL/a ${user} ALL=(ALL:ALL) ALL' /etc/sudoers"
-                arch-chroot /mnt bash -c "sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers"
-                print "Şifre başarıyla ayarlandı ve sudoers dosyası güncellendi."
-                break
-            else
-                echo "Şifre belirlenirken bir hata oluştu. Tekrar deneyin."
-            fi
-        else
-            echo "Şifreler eşleşmiyor, tekrar deneyin."
-        fi
-        attempts=$((attempts + 1))
-        if [ "$attempts" -ge "$retry_limit" ]; then
-            echo "Çok fazla başarısız deneme. İşlem iptal ediliyor."
-            exit 1
-        fi
-    done
-}
-
-
-
-detect_microcode() {
-    local cpu
-    cpu=$(grep vendor_id /proc/cpuinfo)
-    if [[ $cpu == *"AuthenticAMD"* ]]; then
-        print "Bir AMD CPU algılandı, AMD mikro kodu yüklenecek."
-        microcode="amd-ucode"
-    else
-        print "Bir Intel CPU algılandı, Intel mikro kodu yüklenecek."
-        microcode="intel-ucode"
-    fi
-    print "Mikro kod algılama tamamlandı, algılanan: $microcode"
-}
-
-set_hostname() {
-    local hostname=""
-    while [[ -z "$hostname" ]]; do
-        read -r -p "Lütfen ana bilgisayar adını girin (boş bırakılamaz): " hostname
-    done
-    echo "$hostname" > /mnt/etc/hostname
-    cat > /mnt/etc/hosts <<EOF
-127.0.0.1   localhost
-::1         localhost
-127.0.1.1   $hostname.localdomain   $hostname
-EOF
-    print "Hostname ayarlandı: $hostname"
-}
-
-set_locale() {
-    local locale
-    read -r -p "Lütfen kullandığınız yerel ayarı girin (örneğin tr_TR veya en_US): " locale
-    locale=${locale:-en_US}
-    echo "$locale.UTF-8 UTF-8" > /mnt/etc/locale.gen
-    echo "LANG=$locale.UTF-8" > /mnt/etc/locale.conf
-    print "Yerel ayar (locale) ayarlandı: $locale"
-}
-
-set_keyboard_layout() {
-    local kblayout
-    read -r -p "Lütfen kullandığınız klavye düzenini girin (örneğin trq): " kblayout
-    kblayout=${kblayout:-trq}
-    echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
-    print "Klavye düzeni ayarlandı: $kblayout"
-}
-
 partition_disk() {
     local disk=$1
     read -r -p "Bu, $disk üzerindeki mevcut tüm bölümleri siler. Onaylıyor musunuz? [e/H]: " response
@@ -287,23 +197,95 @@ format_disk() {
     print "Swap alanı ayarlandı ve etkinleştirildi."
 }
 
-
-
+detect_microcode() {
+    local cpu
+    cpu=$(grep vendor_id /proc/cpuinfo)
+    if [[ $cpu == *"AuthenticAMD"* ]]; then
+        print "Bir AMD CPU algılandı, AMD mikro kodu yüklenecek."
+        microcode="amd-ucode"
+    else
+        print "Bir Intel CPU algılandı, Intel mikro kodu yüklenecek."
+        microcode="intel-ucode"
+    fi
+    print "Mikro kod algılama tamamlandı, algılanan: $microcode"
+}
 
 run_arch_chroot() {
     local disk=$1
+    local hostname=""
+    local locale=""
+    local kblayout=""
+    local username=""
+    
+    # Kullanıcıdan gerekli bilgileri al
+    while [[ -z "$hostname" ]]; do
+        read -r -p "Lütfen ana bilgisayar adını girin (boş bırakılamaz): " hostname
+    done
+
+    read -r -p "Lütfen kullandığınız yerel ayarı girin (örneğin tr_TR veya en_US): " locale
+    locale=${locale:-en_US}
+
+    read -r -p "Lütfen kullandığınız klavye düzenini girin (örneğin trq): " kblayout
+    kblayout=${kblayout:-trq}
+
+    while [[ -z "$username" ]]; do
+        read -r -p "Lütfen bir kullanıcı hesabı için ad girin: " username
+    done
+
+    local pass=""
+    local pass_confirm=""
+    while true; do
+        read -r -s -p "$username için bir şifre belirleyin: " pass
+        echo
+        read -r -s -p "Şifreyi tekrar girin: " pass_confirm
+        echo
+        if [ "$pass" == "$pass_confirm" ]; then
+            break
+        else
+            echo "Şifreler eşleşmiyor, tekrar deneyin."
+        fi
+    done
+
+    # Chroot işlemi başlıyor
     print "Chroot işlemi başlıyor..."
     arch-chroot /mnt /bin/bash -e <<EOF
     ln -sf /usr/share/zoneinfo/Europe/Istanbul /etc/localtime
     hwclock --systohc
     locale-gen
-    mkinitcpio -P
 
+    # Hostname ayarı
+    echo "$hostname" > /etc/hostname
+    cat > /etc/hosts <<EOL
+127.0.0.1   localhost
+::1         localhost
+127.0.1.1   $hostname.localdomain   $hostname
+EOL
+
+    # Locale ayarı
+    echo "$locale.UTF-8 UTF-8" > /etc/locale.gen
+    echo "LANG=$locale.UTF-8" > /etc/locale.conf
+    locale-gen
+
+    # Klavye düzeni ayarı
+    echo "KEYMAP=$kblayout" > /etc/vconsole.conf
+
+    # Kullanıcı oluşturma ve şifre ayarı
+    if id -u "$username" >/dev/null 2>&1; then
+        echo "Kullanıcı $username zaten mevcut. Şifresi güncellenecek."
+    else
+        useradd -m -G wheel -s /bin/bash "$username"
+        echo "Kullanıcı $username oluşturuldu."
+    fi
+    echo "$username:$pass" | chpasswd
+
+    # Sudoers dosyasını düzenleme
+    sed -i '/^root ALL=(ALL:ALL) ALL/a ${username} ALL=(ALL:ALL) ALL' /etc/sudoers
+    sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
+
+    # GRUB kurulumu ve yapılandırması
     if [ -d /sys/firmware/efi/efivars ]; then
-        # UEFI sistemi için GRUB kurulumu
         grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
     else
-        # BIOS sistemi için GRUB kurulumu (boot bölümünü belirtiyoruz)
         grub-install --target=i386-pc ${disk} --boot-directory=/boot --recheck --debug
         echo "GRUB_DISABLE_OS_PROBER=true" > /etc/default/grub
     fi
@@ -351,10 +333,9 @@ run_arch_chroot() {
 EOL
     print "Pacman yapılandırması tamamlandı."
 EOF
+
     print "Chroot işlemi tamamlandı."
 }
-
-
 
 main() {
     show_logo
@@ -371,21 +352,6 @@ main() {
 
     print "Temel sistem kuruluyor (biraz zaman alabilir)."
     pacstrap /mnt --needed base base-devel "$kernel" "$kernel_headers" "$additional_packages" "$microcode" grub rsync efibootmgr reflector man vim nano git sudo || error "Paket yükleme başarısız oldu."
-
-    set_hostname
-    set_locale
-    set_keyboard_layout
-
-    print "Fstab Oluşturuluyor."
-    genfstab -U /mnt >> /mnt/etc/fstab
-
-    read -r -p "Lütfen bir kullanıcı hesabı için ad girin: " username
-    while [[ -z "$username" ]]; do
-        read -r -p "Kullanıcı adı boş olamaz, lütfen geçerli bir ad girin: " username
-    done
-    print "Kullanıcı adı girildi: $username"
-    set_user_and_password "$username"
-    set_user_and_password "root"
 
     run_arch_chroot "$DISK"
 
