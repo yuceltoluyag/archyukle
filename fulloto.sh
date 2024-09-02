@@ -304,7 +304,6 @@ EOL
         grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
     else
         grub-install --target=i386-pc ${disk} --boot-directory=/boot --recheck --debug
-        echo "GRUB_DISABLE_OS_PROBER=true" > /etc/default/grub
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
     echo "GRUB kurulumu ve yapılandırması tamamlandı."
