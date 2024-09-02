@@ -216,7 +216,7 @@ run_arch_chroot() {
     local locale=""
     local kblayout=""
     local username=""
-    
+
     # Kullanıcıdan gerekli bilgileri al
     while [[ -z "$hostname" ]]; do
         read -r -p "Lütfen ana bilgisayar adını girin (boş bırakılamaz): " hostname
@@ -246,6 +246,20 @@ run_arch_chroot() {
         fi
     done
 
+    local root_pass=""
+    local root_pass_confirm=""
+    while true; do
+        read -r -s -p "Root kullanıcısı için bir şifre belirleyin: " root_pass
+        echo
+        read -r -s -p "Şifreyi tekrar girin: " root_pass_confirm
+        echo
+        if [ "$root_pass" == "$root_pass_confirm" ]; then
+            break
+        else
+            echo "Şifreler eşleşmiyor, tekrar deneyin."
+        fi
+    done
+
     # Chroot işlemi başlıyor
     print "Chroot işlemi başlıyor..."
     arch-chroot /mnt /bin/bash -e <<EOF
@@ -268,6 +282,9 @@ EOL
 
     # Klavye düzeni ayarı
     echo "KEYMAP=$kblayout" > /etc/vconsole.conf
+
+    # Root şifresini ayarlama
+    echo "root:$root_pass" | chpasswd
 
     # Kullanıcı oluşturma ve şifre ayarı
     if id -u "$username" >/dev/null 2>&1; then
@@ -336,6 +353,7 @@ EOF
 
     print "Chroot işlemi tamamlandı."
 }
+
 
 
 main() {
