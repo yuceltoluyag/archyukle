@@ -92,12 +92,12 @@ select_kernel() {
         1 )
             kernel="linux"
             kernel_headers="linux-headers"
-            additional_packages="linux-firmware acpi_call-dkms"
+            additional_packages="linux-firmware"
             ;;
         2 )
             kernel="linux-lts"
             kernel_headers="linux-lts-headers"
-            additional_packages="r8168-lts acpi_call-lts"
+            additional_packages="linux-firmware"
             ;;
         * )
             print "Geçerli bir seçim yapmadınız."
@@ -290,7 +290,7 @@ EOL
         echo "GRUB_DISABLE_OS_PROBER=true" > /etc/default/grub
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
-    print "GRUB kurulumu ve yapılandırması tamamlandı."
+    echo "GRUB kurulumu ve yapılandırması tamamlandı."
 
     # Pacman konfigürasyonunu ayarlıyoruz
     cat > /etc/pacman.conf <<'EOL'
@@ -331,11 +331,12 @@ EOL
 
 # vim:fdm=marker
 EOL
-    print "Pacman yapılandırması tamamlandı."
+    echo "Pacman yapılandırması tamamlandı."
 EOF
 
     print "Chroot işlemi tamamlandı."
 }
+
 
 main() {
     show_logo
@@ -351,8 +352,11 @@ main() {
     select_network
 
     print "Temel sistem kuruluyor (biraz zaman alabilir)."
+   if [[ -n "$additional_packages" ]]; then
     pacstrap /mnt --needed base base-devel "$kernel" "$kernel_headers" "$additional_packages" "$microcode" grub rsync efibootmgr reflector man vim nano git sudo || error "Paket yükleme başarısız oldu."
-
+   else
+    pacstrap /mnt --needed base base-devel "$kernel" "$kernel_headers" "$microcode" grub rsync efibootmgr reflector man vim nano git sudo || error "Paket yükleme başarısız oldu."
+   fi
     run_arch_chroot "$DISK"
 
     print "Bitti, şimdi yeniden başlatabilirsiniz (kullanıcı adı ve şifre girdikten sonra paketleri yüklemeyi unutmayın)."
